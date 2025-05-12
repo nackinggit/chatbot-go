@@ -11,18 +11,22 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type Options struct {
+type LoggerConfig struct {
 	LogFileDir    string //文件保存地方
 	AppName       string //日志文件前缀
 	ErrorFileName string
 	WarnFileName  string
 	InfoFileName  string
 	DebugFileName string
-	Level         zapcore.Level //日志等级
-	MaxSize       int           //日志文件小大（M）
-	MaxBackups    int           // 最多存在多少个切片文件
-	MaxAge        int           //保存的最大天数
-	Development   bool          //是否是开发模式
+	Level         string //日志等级
+	MaxSize       int    //日志文件小大（M）
+	MaxBackups    int    // 最多存在多少个切片文件
+	MaxAge        int    //保存的最大天数
+	Development   bool   //是否是开发模式
+}
+
+type options struct {
+	Properties LoggerConfig
 	zap.Config
 }
 
@@ -37,12 +41,12 @@ var (
 type Logger struct {
 	*zap.Logger
 	sync.RWMutex
-	Opts        *Options `json:"opts"`
+	Opts        *options `json:"opts"`
 	zapConfig   zap.Config
 	initialized bool
 }
 
-func NewLogger(opts *Options) *zap.Logger {
+func NewLogger(opts *options) *zap.Logger {
 	l = &Logger{Opts: opts}
 	l.Lock()
 	defer l.Unlock()
@@ -51,26 +55,29 @@ func NewLogger(opts *Options) *zap.Logger {
 		return nil
 	}
 	if l.Opts == nil {
-		l.Opts = &Options{
-			LogFileDir:    "",
-			AppName:       "app",
-			ErrorFileName: "error.log",
-			WarnFileName:  "warn.log",
-			InfoFileName:  "info.log",
-			DebugFileName: "debug.log",
-			Level:         zapcore.DebugLevel,
-			MaxSize:       100,
-			MaxBackups:    60,
-			MaxAge:        30,
-			Development:   true,
+		l.Opts = &options{
+			Properties: LoggerConfig{
+				LogFileDir:    "",
+				AppName:       "app",
+				ErrorFileName: "error.log",
+				WarnFileName:  "warn.log",
+				InfoFileName:  "info.log",
+				DebugFileName: "debug.log",
+				Level:         "debug",
+				MaxSize:       100,
+				MaxBackups:    60,
+				MaxAge:        30,
+				Development:   true,
+			},
 		}
 	}
-
-	if l.Opts.LogFileDir == "" {
-		l.Opts.LogFileDir, _ = filepath.Abs(filepath.Dir(filepath.Join(".")))
-		l.Opts.LogFileDir += sp + "logs" + sp
+	property := l.Opts.Properties
+	if property.LogFileDir == "" {
+		property.LogFileDir, _ = filepath.Abs(filepath.Dir(filepath.Join(".")))
+		property.LogFileDir += sp + "logs" + sp
 	}
-	if l.Opts.Development {
+	if property.Development {
+		l.Opts.Development = true
 		l.zapConfig = zap.NewDevelopmentConfig()
 		l.zapConfig.EncoderConfig.EncodeTime = timeEncoder
 	} else {
@@ -83,7 +90,12 @@ func NewLogger(opts *Options) *zap.Logger {
 	if len(l.Opts.ErrorOutputPaths) == 0 {
 		l.zapConfig.OutputPaths = []string{"stderr"}
 	}
-	l.zapConfig.Level.SetLevel(l.Opts.Level)
+	rlevel, err := zapcore.ParseLevel(property.Level)
+	if err != nil {
+		logger.Sugar().Infof("invalid log level %q; using INFO", property.Level)
+		rlevel = zapcore.DebugLevel
+	}
+	l.zapConfig.Level.SetLevel(rlevel)
 	l.init()
 	l.initialized = true
 	return l.Logger
@@ -100,20 +112,21 @@ func (l *Logger) init() {
 }
 
 func (l *Logger) setSyncs() {
+	property := l.Opts.Properties
 	f := func(fname string) zapcore.WriteSyncer {
 		return zapcore.AddSync(&lumberjack.Logger{
-			Filename:   l.Opts.LogFileDir + sp + l.Opts.AppName + "-" + fname,
-			MaxSize:    l.Opts.MaxSize,
-			MaxBackups: l.Opts.MaxBackups,
-			MaxAge:     l.Opts.MaxAge,
+			Filename:   property.LogFileDir + sp + property.AppName + "-" + fname,
+			MaxSize:    property.MaxSize,
+			MaxBackups: property.MaxBackups,
+			MaxAge:     property.MaxAge,
 			Compress:   true,
 			LocalTime:  true,
 		})
 	}
-	errWS = f(l.Opts.ErrorFileName)
-	warnWS = f(l.Opts.WarnFileName)
-	infoWS = f(l.Opts.InfoFileName)
-	debugWS = f(l.Opts.DebugFileName)
+	errWS = f(property.ErrorFileName)
+	warnWS = f(property.WarnFileName)
+	infoWS = f(property.InfoFileName)
+	debugWS = f(property.DebugFileName)
 }
 
 func (l *Logger) cores() zap.Option {
@@ -159,10 +172,13 @@ func timeUnixNano(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendInt64(t.UnixNano() / 1e6)
 }
 
-var logger *zap.Logger
+var logger *zap.Logger = func() *zap.Logger {
+	slogger, _ := zap.NewDevelopment()
+	return slogger
+}()
 
 // log instance init
-func InitLog(opt *Options) {
+func InitLog(opt *options) {
 	logger = NewLogger(opt)
 }
 

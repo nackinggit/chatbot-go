@@ -1,5 +1,37 @@
 package main
 
-func main() {
+import (
+	"com.imilair/chatbot/bootstrap"
+	"com.imilair/chatbot/bootstrap/log"
+)
 
+var xlog = log.GetLogger()
+
+type app struct {
+	bootstrap.BaseApp
+}
+
+func newServer() bootstrap.Server {
+	return &app{}
+}
+
+// 创建或启动资源
+func (a *app) Start() error {
+	xlog.Info("service init success")
+	return nil
+}
+
+// 回收资源
+func (a *app) Stop() error {
+	return nil
+}
+
+// 返回配置结构,如果返回nil,则需要自己初始化app配置
+func (a *app) Config() any {
+	return &bootstrap.Config
+}
+
+func main() {
+	// 启动
+	bootstrap.Run(newServer())
 }

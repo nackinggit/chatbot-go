@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 
+	xlog "com.imilair/chatbot/bootstrap/log"
 	"github.com/rs/xid"
 
 	"github.com/bwmarrin/snowflake"
@@ -31,7 +32,7 @@ func init() {
 		log.Fatalf("failed to create snowflake node: %s", err.Error())
 		return
 	}
-	log.Printf("snowflake node created: %d/%d", hostIdx%nodesCount, nodesCount)
+	xlog.Infof("snowflake node created: %d/%d", hostIdx%nodesCount, nodesCount)
 }
 
 func NewSnowflakeID() int64 {

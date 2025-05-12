@@ -2,10 +2,8 @@ package main
 
 import (
 	"com.imilair/chatbot/bootstrap"
-	"com.imilair/chatbot/bootstrap/log"
+	xlog "com.imilair/chatbot/bootstrap/log"
 )
-
-var xlog = log.GetLogger()
 
 type app struct {
 	bootstrap.BaseApp
@@ -23,6 +21,7 @@ func (a *app) Start() error {
 
 // 回收资源
 func (a *app) Stop() error {
+	xlog.Info("service stop success")
 	return nil
 }
 

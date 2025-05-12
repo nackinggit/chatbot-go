@@ -1,4 +1,4 @@
-package log
+package xlog
 
 import (
 	"os"
@@ -26,7 +26,7 @@ type LoggerConfig struct {
 }
 
 type options struct {
-	Properties LoggerConfig
+	Properties *LoggerConfig
 	zap.Config
 }
 
@@ -46,7 +46,12 @@ type Logger struct {
 	initialized bool
 }
 
-func NewLogger(opts *options) *zap.Logger {
+func NewLogger(opts *options) *zap.SugaredLogger {
+	defer func() {
+		if logger != nil {
+			logger.Sync()
+		}
+	}()
 	l = &Logger{Opts: opts}
 	l.Lock()
 	defer l.Unlock()
@@ -56,7 +61,7 @@ func NewLogger(opts *options) *zap.Logger {
 	}
 	if l.Opts == nil {
 		l.Opts = &options{
-			Properties: LoggerConfig{
+			Properties: &LoggerConfig{
 				LogFileDir:    "",
 				AppName:       "app",
 				ErrorFileName: "error.log",
@@ -92,19 +97,19 @@ func NewLogger(opts *options) *zap.Logger {
 	}
 	rlevel, err := zapcore.ParseLevel(property.Level)
 	if err != nil {
-		logger.Sugar().Infof("invalid log level %q; using INFO", property.Level)
+		logger.Infof("invalid log level %q; using INFO", property.Level)
 		rlevel = zapcore.DebugLevel
 	}
 	l.zapConfig.Level.SetLevel(rlevel)
 	l.init()
 	l.initialized = true
-	return l.Logger
+	return l.Logger.Sugar()
 }
 
 func (l *Logger) init() {
 	l.setSyncs()
 	var err error
-	l.Logger, err = l.zapConfig.Build(l.cores())
+	l.Logger, err = l.zapConfig.Build(l.cores(), zap.AddCallerSkip(1))
 	if err != nil {
 		panic(err)
 	}
@@ -172,18 +177,21 @@ func timeUnixNano(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendInt64(t.UnixNano() / 1e6)
 }
 
-var logger *zap.Logger = func() *zap.Logger {
-	slogger, _ := zap.NewDevelopment()
-	return slogger
+var logger *zap.SugaredLogger = func() *zap.SugaredLogger {
+	slogger, _ := zap.NewDevelopment(zap.AddCallerSkip(1))
+	return slogger.Sugar()
 }()
 
 // log instance init
-func InitLog(opt *options) {
+func InitLog(property *LoggerConfig) {
+	opt := &options{
+		Properties: property,
+	}
 	logger = NewLogger(opt)
 }
 
-func GetLogger() *zap.SugaredLogger {
-	return logger.Sugar()
+func Sync() error {
+	return logger.Sync()
 }
 
 const (

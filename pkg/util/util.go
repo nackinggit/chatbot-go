@@ -14,10 +14,8 @@ import (
 	"time"
 	"unicode"
 
-	"com.imilair/chatbot/bootstrap/log"
+	xlog "com.imilair/chatbot/bootstrap/log"
 )
-
-var xlog = log.GetLogger()
 
 // FindIndexOf searches an element in a slice based on a predicate and returns the index and true.
 // It returns -1 and false if the element is not found.

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"com.imilair/chatbot/bootstrap/log"
+	xlog "com.imilair/chatbot/bootstrap/log"
 )
 
 type Config struct {
-	Env    string            `json:"env" yaml:"env" mapstructure:"env"`
-	App    *Application      `json:"app" yaml:"app" mapstructure:"app"`
-	Logger *log.LoggerConfig `json:"logger" yaml:"logger" mapstructure:"logger"`
+	Env    string             `json:"env" yaml:"env" mapstructure:"env"`
+	App    *Application       `json:"app" yaml:"app" mapstructure:"app"`
+	Logger *xlog.LoggerConfig `json:"logger" yaml:"logger" mapstructure:"logger"`
 }
 
 func (c *Config) GetGracefulTimeout() time.Duration {

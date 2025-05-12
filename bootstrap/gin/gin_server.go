@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"com.imilair/chatbot/bootstrap/config"
-	"com.imilair/chatbot/bootstrap/log"
+	xlog "com.imilair/chatbot/bootstrap/log"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/netutil"
 )
@@ -147,7 +147,7 @@ func NewServer(cfg *config.HttpServerConfig, router func(*gin.Engine), middlewar
 
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		log.GetLogger().Errorf("Http listen(%s) failed : %+v", address, err)
+		xlog.Errorf("Http listen(%s) failed : %+v", address, err)
 		return nil, err
 	}
 
@@ -177,8 +177,6 @@ type HttpGinServer struct {
 	listener        net.Listener
 	gracefulTimeout time.Duration
 	status          int32
-	middlewares     []gin.HandlerFunc
-	httpRouter      func(*gin.Engine)
 }
 
 func (s *HttpGinServer) Start() error {
@@ -192,7 +190,7 @@ func (s *HttpGinServer) Stop() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.gracefulTimeout)
 	defer cancel()
 	if err := s.srv.Shutdown(ctx); err != nil {
-		log.GetLogger().Errorf("stop http server error : %+v", err)
+		xlog.Errorf("stop http server error : %+v", err)
 		return err
 	}
 	return nil

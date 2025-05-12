@@ -16,10 +16,8 @@ import (
 
 	"com.imilair/chatbot/bootstrap/config"
 	xgin "com.imilair/chatbot/bootstrap/gin"
-	"com.imilair/chatbot/bootstrap/log"
+	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/pkg/util"
-
-	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,9 +39,6 @@ var (
 	ConfigPath string
 )
 
-var sugar *zap.SugaredLogger = log.GetLogger()
-var xlog = sugar.Named("server")
-
 func init() {
 	flag.StringVar(&ConfigPath, "configpath", "./configs", "application config path")
 }
@@ -55,10 +50,21 @@ func (a *app) Init() error {
 	version := Version{}
 	version.Init()
 
+	err := initConfig()
+	if err != nil {
+		return err
+	}
+	if Config.Logger != nil {
+		xlog.InitLog(Config.Logger)
+	}
+	return nil
+}
+
+func initConfig() error {
 	if _, err := os.Stat(ConfigPath); err == nil {
 		viper.AddConfigPath(ConfigPath)
 	} else {
-		sugar.Warnf("application config path not setting, use default : %s", "./configs")
+		xlog.Warnf("application config path not setting, use default : %s", "./configs")
 		viper.AddConfigPath("./configs")
 	}
 	viper.SetConfigName("application")
@@ -68,17 +74,17 @@ func (a *app) Init() error {
 		env := viper.GetString("env")
 		if env == "" {
 			env = "default"
-			sugar.Infof("application env not setting, use default : %s", env)
+			xlog.Infof("application env not setting, use default : %s", env)
 			viper.Set("env", env)
 		} else {
 			viper.SetConfigName(fmt.Sprintf("application-%s", env))
 			if err := viper.MergeInConfig(); err != nil {
-				sugar.Warnf("application env config not setting : %s", env)
+				xlog.Warnf("application env config not setting : %s", env)
 				panic(fmt.Errorf("application init err : %v", err))
 			}
 
 			if err := viper.MergeInConfig(); err != nil {
-				sugar.Warnf("application env config not setting : %s", env)
+				xlog.Warnf("application env config not setting : %s", env)
 				panic(fmt.Errorf("application init err : %v", err))
 			}
 
@@ -86,7 +92,7 @@ func (a *app) Init() error {
 				panic(fmt.Errorf("application init err : %v", err))
 			}
 		}
-		sugar.Infof("application config : %v", util.JsonString(Config))
+		xlog.Infof("application config : %v", util.JsonString(Config))
 	}
 	return nil
 }
@@ -147,7 +153,7 @@ func recovery(hr ...Handler) {
 	if r := recover(); r != nil {
 		buf := make([]byte, 1<<18)
 		n := runtime.Stack(buf, false)
-		sugar.Errorf("%v, Stack: %s", r, buf[0:n])
+		xlog.Errorf("%v, Stack: %s", r, buf[0:n])
 		for _, h := range hr {
 			h(r)
 		}
@@ -194,7 +200,7 @@ type Server interface {
 
 func Run(a Server) {
 	if err := gapp.Init(); err != nil {
-		sugar.Fatalf("application init error : %v", err)
+		xlog.Fatalf("application init error : %v", err)
 		panic(err)
 	}
 
@@ -249,7 +255,7 @@ func (r *appRunner) handlStop() {
 		}
 
 		time.Sleep(to)
-		sugar.Error("stop : timeout")
+		xlog.Error("stop : timeout")
 		os.Exit(1)
 	}()
 
@@ -280,14 +286,14 @@ func (r *appRunner) handlStop() {
 func (r *appRunner) Wait() {
 	r.wg.Wait()
 	close(r.errCh)
-	_ = log.GetLogger().Desugar().Sync()
+	_ = xlog.Sync()
 }
 
 func (r *appRunner) handleSignal() {
 	signal.Notify(r.signals, syscall.SIGPIPE, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGABRT)
 	for {
 		sig := <-r.signals
-		sugar.Infof("received signal: %s", sig)
+		xlog.Infof("received signal: %s", sig)
 		switch sig {
 		case syscall.SIGPIPE:
 		default:
@@ -304,7 +310,7 @@ func (r *appRunner) handleErr() {
 			return
 		}
 		if err != nil {
-			sugar.Errorf("received error : %v", err)
+			xlog.Errorf("received error : %v", err)
 			r.handlStop()
 			continue
 		}

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"com.imilair/chatbot/bootstrap/log"
+	xlog "com.imilair/chatbot/bootstrap/log"
 )
 
 func Marshal(src any) ([]byte, error) {
@@ -34,7 +34,7 @@ func JsonToMap(input string) map[string]any {
 	var data map[string]any
 	err := Unmarshal([]byte(input), &data)
 	if err != nil {
-		log.GetLogger().Warnf("JsonToMap err， data:%v, err:%v", input, err)
+		xlog.Warnf("JsonToMap err， data:%v, err:%v", input, err)
 	}
 	return data
 }
@@ -53,7 +53,7 @@ func JsonToMapWithNumber(input string) map[string]any {
 	// 解析 JSON 到 map[string]interface{}
 	var result map[string]any
 	if err := decoder.Decode(&result); err != nil {
-		log.GetLogger().Warnf("JsonToMapWithNumber err， data:%v, err:%v", input, err)
+		xlog.Warnf("JsonToMapWithNumber err， data:%v, err:%v", input, err)
 	}
 
 	// 遍历 map 并将 json.Number 转换为 int
@@ -62,7 +62,7 @@ func JsonToMapWithNumber(input string) map[string]any {
 			if i, err := strconv.ParseInt(num.String(), 10, 64); err == nil {
 				result[k] = i // 将转换后的 int 存回 map
 			} else {
-				log.GetLogger().Warnf("Error converting number to int for key '%s': %v", k, err)
+				xlog.Warnf("Error converting number to int for key '%s': %v", k, err)
 			}
 		}
 	}

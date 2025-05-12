@@ -86,7 +86,7 @@ func (sv *ServerOptions) withGinConfig(cfg *config.GinServerConfig) *ServerOptio
 		return sv
 	}
 	if cfg.Mode != "" {
-		gin.SetMode(cfg.Mode)
+		sv.mode = HttpMode(cfg.Mode)
 	}
 	return sv
 }

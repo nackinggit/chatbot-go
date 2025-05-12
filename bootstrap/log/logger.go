@@ -46,7 +46,7 @@ func defaultLoggerOpts() *options {
 			MaxSize:       100,
 			MaxBackups:    60,
 			MaxAge:        30,
-			Development:   true,
+			Console:       true,
 		},
 	}
 }
@@ -80,7 +80,7 @@ func (l *Logger) mergeOpts(logcfg *config.LoggerConfig) {
 	if logcfg.MaxSize > 0 {
 		opts.Properties.MaxSize = logcfg.MaxSize
 	}
-	opts.Properties.Development = logcfg.Development
+	opts.Properties.Console = logcfg.Console
 }
 
 func NewLogger(logcfg *config.LoggerConfig) *zap.SugaredLogger {
@@ -104,7 +104,7 @@ func NewLogger(logcfg *config.LoggerConfig) *zap.SugaredLogger {
 		property.LogFileDir, _ = filepath.Abs(filepath.Dir(filepath.Join(".")))
 		property.LogFileDir += sp + "logs" + sp
 	}
-	if property.Development {
+	if property.Console {
 		l.Opts.Development = true
 		l.zapConfig = zap.NewDevelopmentConfig()
 		l.zapConfig.EncoderConfig.EncodeTime = timeEncoder

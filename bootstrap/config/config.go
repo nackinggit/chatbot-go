@@ -7,38 +7,38 @@ import (
 )
 
 type Config struct {
-	Env    string        `json:"env" yaml:"env" mapstructure:"env"`
-	App    *Application  `json:"app" yaml:"app" mapstructure:"app"`
-	Logger *LoggerConfig `json:"logger" yaml:"logger" mapstructure:"logger"`
+	Env        string            `json:"env" yaml:"env" mapstructure:"env"`
+	App        *Application      `json:"app" yaml:"app" mapstructure:"app"`
+	HttpServer *HttpServerConfig `json:"httpServer" yaml:"httpServer" mapstructure:"httpServer"`
+	Logger     *LoggerConfig     `json:"logger" yaml:"logger" mapstructure:"logger"`
 }
 
 type LoggerConfig struct {
-	LogFileDir    string //文件保存地方
-	LogFilename   string //日志文件前缀
-	ErrorFileName string
-	WarnFileName  string
-	InfoFileName  string
-	DebugFileName string
-	Level         string //日志等级
-	MaxSize       int    //日志文件小大（M）
-	MaxBackups    int    // 最多存在多少个切片文件
-	MaxAge        int    //保存的最大天数
-	Development   bool   //是否是开发模式
+	LogFileDir    string `json:"logFileDir" yaml:"logFileDir" mapstructure:"logFileDir"`          //文件保存地方
+	LogFilename   string `json:"logFilename" yaml:"logFilename" mapstructure:"logFilename"`       //日志文件前缀
+	ErrorFileName string `json:"errorFileName" yaml:"errorFileName" mapstructure:"errorFileName"` //错误日志文件名
+	WarnFileName  string `json:"warnFileName" yaml:"warnFileName" mapstructure:"warnFileName"`    //警告日志文件名
+	InfoFileName  string `json:"infoFileName" yaml:"infoFileName" mapstructure:"infoFileName"`    //信息日志文件名
+	DebugFileName string `json:"debugFileName" yaml:"debugFileName" mapstructure:"debugFileName"` //调试日志文件名
+	Level         string `json:"level" yaml:"level" mapstructure:"level"`                         //日志等级
+	MaxSize       int    `json:"maxSize" yaml:"maxSize" mapstructure:"maxSize"`                   //日志文件小大（M）
+	MaxBackups    int    `json:"maxBackups" yaml:"maxBackups" mapstructure:"maxBackups"`          //最多存在多少个切片文件
+	MaxAge        int    `json:"maxAge" yaml:"maxAge" mapstructure:"maxAge"`                      //保存的最大天数
+	Console       bool   `json:"console" yaml:"console" mapstructure:"console"`                   //是否打印控制台
 }
 
 func (c *Config) GetGracefulTimeout() time.Duration {
 	if c == nil {
 		return 0 * time.Second
 	}
-	if c.App == nil || c.App.HttpServer == nil || c.App.HttpServer.Http == nil {
+	if c.HttpServer == nil || c.HttpServer.Http == nil {
 		return 0 * time.Second
 	}
-	return c.App.HttpServer.Http.GracefulTimeout
+	return c.HttpServer.Http.GracefulTimeout
 }
 
 type Application struct {
-	Name       string            `json:"name" yaml:"name" mapstructure:"name"`
-	HttpServer *HttpServerConfig `json:"httpServer" yaml:"httpServer" mapstructure:"httpServer"`
+	Name string `json:"name" yaml:"name" mapstructure:"name"`
 }
 
 type HttpServerConfig struct {
@@ -75,9 +75,6 @@ func (cfg *HttpServerConfig) GetListen() (string, error) {
 	hsc := cfg.Http
 	if hsc.Port == 0 {
 		return "", errors.New("empty port")
-	}
-	if hsc.Host == "" {
-		return "", errors.New("empty host")
 	}
 	return fmt.Sprintf("%s:%d", hsc.Host, hsc.Port), nil
 }

@@ -1,3 +1,11 @@
 env: dev
 app:
   name: imilair-chatbot
+httpServer:
+  http:
+    port: 8081
+  gin:
+    mode: debug
+logger:
+  level: debug
+  console: true

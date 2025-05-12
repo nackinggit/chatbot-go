@@ -118,9 +118,9 @@ func (a *app) start() error {
 		monitor.GET("/prometheus", DefaultHealthCheckHandler)
 	}
 
-	if Config.App.HttpServer != nil {
+	if Config.HttpServer != nil {
 		start = true
-		httpServerCfg := Config.App.HttpServer
+		httpServerCfg := Config.HttpServer
 		svr, err := xgin.NewServer(httpServerCfg, a.httpRouter, a.middlewares...)
 		a.httpServer = svr
 		if err != nil {

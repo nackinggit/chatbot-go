@@ -4,14 +4,26 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	xlog "com.imilair/chatbot/bootstrap/log"
 )
 
 type Config struct {
-	Env    string             `json:"env" yaml:"env" mapstructure:"env"`
-	App    *Application       `json:"app" yaml:"app" mapstructure:"app"`
-	Logger *xlog.LoggerConfig `json:"logger" yaml:"logger" mapstructure:"logger"`
+	Env    string        `json:"env" yaml:"env" mapstructure:"env"`
+	App    *Application  `json:"app" yaml:"app" mapstructure:"app"`
+	Logger *LoggerConfig `json:"logger" yaml:"logger" mapstructure:"logger"`
+}
+
+type LoggerConfig struct {
+	LogFileDir    string //文件保存地方
+	LogFilename   string //日志文件前缀
+	ErrorFileName string
+	WarnFileName  string
+	InfoFileName  string
+	DebugFileName string
+	Level         string //日志等级
+	MaxSize       int    //日志文件小大（M）
+	MaxBackups    int    // 最多存在多少个切片文件
+	MaxAge        int    //保存的最大天数
+	Development   bool   //是否是开发模式
 }
 
 func (c *Config) GetGracefulTimeout() time.Duration {

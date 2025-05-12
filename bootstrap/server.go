@@ -68,32 +68,31 @@ func initConfig() error {
 		viper.AddConfigPath("./configs")
 	}
 	viper.SetConfigName("application")
-	if err := viper.ReadInConfig(); err != nil {
-		panic(fmt.Errorf("fatal error config file: %v", err))
-	} else {
-		env := viper.GetString("env")
-		if env == "" {
-			env = "default"
-			xlog.Infof("application env not setting, use default : %s", env)
-			viper.Set("env", env)
-		} else {
-			viper.SetConfigName(fmt.Sprintf("application-%s", env))
-			if err := viper.MergeInConfig(); err != nil {
-				xlog.Warnf("application env config not setting : %s", env)
-				panic(fmt.Errorf("application init err : %v", err))
-			}
-
-			if err := viper.MergeInConfig(); err != nil {
-				xlog.Warnf("application env config not setting : %s", env)
-				panic(fmt.Errorf("application init err : %v", err))
-			}
-
-			if err := viper.Unmarshal(&Config); err != nil {
-				panic(fmt.Errorf("application init err : %v", err))
-			}
-		}
-		xlog.Infof("application config : %v", util.JsonString(Config))
+	err := viper.ReadInConfig()
+	if err != nil {
+		return err
 	}
+
+	env := viper.GetString("env")
+	if env == "" {
+		env = "default"
+		xlog.Infof("application env not setting, use default : %s", env)
+		viper.Set("env", env)
+	} else {
+		viper.SetConfigName(fmt.Sprintf("application-%s", env))
+		err := viper.MergeInConfig()
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := viper.Unmarshal(&Config); err != nil {
+		panic(fmt.Errorf("application init err : %v", err))
+	}
+	if Config.Logger != nil && Config.Logger.LogFilename == "" {
+		Config.Logger.LogFilename = Config.App.Name
+	}
+	xlog.Infof("application config : %v", util.JsonString(Config))
 	return nil
 }
 

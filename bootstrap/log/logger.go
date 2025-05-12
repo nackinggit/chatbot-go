@@ -6,27 +6,14 @@ import (
 	"sync"
 	"time"
 
+	"com.imilair/chatbot/bootstrap/config"
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-type LoggerConfig struct {
-	LogFileDir    string //文件保存地方
-	AppName       string //日志文件前缀
-	ErrorFileName string
-	WarnFileName  string
-	InfoFileName  string
-	DebugFileName string
-	Level         string //日志等级
-	MaxSize       int    //日志文件小大（M）
-	MaxBackups    int    // 最多存在多少个切片文件
-	MaxAge        int    //保存的最大天数
-	Development   bool   //是否是开发模式
-}
-
 type options struct {
-	Properties *LoggerConfig
+	Properties *config.LoggerConfig
 	zap.Config
 }
 
@@ -46,35 +33,71 @@ type Logger struct {
 	initialized bool
 }
 
-func NewLogger(opts *options) *zap.SugaredLogger {
+func defaultLoggerOpts() *options {
+	return &options{
+		Properties: &config.LoggerConfig{
+			LogFileDir:    "",
+			LogFilename:   "app",
+			ErrorFileName: "error.log",
+			WarnFileName:  "warn.log",
+			InfoFileName:  "info.log",
+			DebugFileName: "debug.log",
+			Level:         "debug",
+			MaxSize:       100,
+			MaxBackups:    60,
+			MaxAge:        30,
+			Development:   true,
+		},
+	}
+}
+
+func (l *Logger) mergeOpts(logcfg *config.LoggerConfig) {
+	opts := l.Opts
+	if logcfg.LogFileDir != "" {
+		opts.Properties.LogFileDir = logcfg.DebugFileName
+	}
+	if logcfg.LogFilename != "" {
+		opts.Properties.LogFilename = logcfg.LogFilename
+	}
+	if logcfg.ErrorFileName != "" {
+		opts.Properties.ErrorFileName = logcfg.ErrorFileName
+	}
+	if logcfg.WarnFileName != "" {
+		opts.Properties.WarnFileName = logcfg.WarnFileName
+	}
+	if logcfg.InfoFileName != "" {
+		opts.Properties.InfoFileName = logcfg.InfoFileName
+	}
+	if logcfg.DebugFileName != "" {
+		opts.Properties.DebugFileName = logcfg.DebugFileName
+	}
+	if logcfg.MaxAge > 0 {
+		opts.Properties.MaxAge = logcfg.MaxAge
+	}
+	if logcfg.MaxBackups > 0 {
+		opts.Properties.MaxBackups = logcfg.MaxBackups
+	}
+	if logcfg.MaxSize > 0 {
+		opts.Properties.MaxSize = logcfg.MaxSize
+	}
+	opts.Properties.Development = logcfg.Development
+}
+
+func NewLogger(logcfg *config.LoggerConfig) *zap.SugaredLogger {
 	defer func() {
 		if logger != nil {
 			logger.Sync()
 		}
 	}()
-	l = &Logger{Opts: opts}
+	l = &Logger{Opts: defaultLoggerOpts()}
 	l.Lock()
 	defer l.Unlock()
 	if l.initialized {
 		l.Info("[NewLogger] logger initEd")
 		return nil
 	}
-	if l.Opts == nil {
-		l.Opts = &options{
-			Properties: &LoggerConfig{
-				LogFileDir:    "",
-				AppName:       "app",
-				ErrorFileName: "error.log",
-				WarnFileName:  "warn.log",
-				InfoFileName:  "info.log",
-				DebugFileName: "debug.log",
-				Level:         "debug",
-				MaxSize:       100,
-				MaxBackups:    60,
-				MaxAge:        30,
-				Development:   true,
-			},
-		}
+	if logcfg != nil {
+		l.mergeOpts(logcfg)
 	}
 	property := l.Opts.Properties
 	if property.LogFileDir == "" {
@@ -120,7 +143,7 @@ func (l *Logger) setSyncs() {
 	property := l.Opts.Properties
 	f := func(fname string) zapcore.WriteSyncer {
 		return zapcore.AddSync(&lumberjack.Logger{
-			Filename:   property.LogFileDir + sp + property.AppName + "-" + fname,
+			Filename:   property.LogFileDir + sp + property.LogFilename + "-" + fname,
 			MaxSize:    property.MaxSize,
 			MaxBackups: property.MaxBackups,
 			MaxAge:     property.MaxAge,
@@ -183,11 +206,8 @@ var logger *zap.SugaredLogger = func() *zap.SugaredLogger {
 }()
 
 // log instance init
-func InitLog(property *LoggerConfig) {
-	opt := &options{
-		Properties: property,
-	}
-	logger = NewLogger(opt)
+func InitLog(property *config.LoggerConfig) {
+	logger = NewLogger(property)
 }
 
 func Sync() error {

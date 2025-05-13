@@ -36,6 +36,7 @@ func (v *Version) Init() {
 		v.printVersion(os.Stdout)
 		os.Exit(0)
 	}
+	v.init()
 }
 
 func (v *Version) printVersion(w io.Writer) {

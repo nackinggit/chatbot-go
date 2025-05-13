@@ -7,10 +7,12 @@ import (
 )
 
 type Config struct {
-	Env        string            `json:"env" yaml:"env" mapstructure:"env"`
-	App        *Application      `json:"app" yaml:"app" mapstructure:"app"`
-	HttpServer *HttpServerConfig `json:"httpServer" yaml:"httpServer" mapstructure:"httpServer"`
-	Logger     *LoggerConfig     `json:"logger" yaml:"logger" mapstructure:"logger"`
+	Env        string                  `json:"env" yaml:"env" mapstructure:"env"`
+	App        *Application            `json:"app" yaml:"app" mapstructure:"app"`
+	HttpServer *HttpServerConfig       `json:"httpServer" yaml:"httpServer" mapstructure:"httpServer"`
+	Logger     *LoggerConfig           `json:"logger" yaml:"logger" mapstructure:"logger"`
+	MySql      map[string]*MySQLConfig `json:"mysql" yaml:"mysql" mapstructure:"mysql"`
+	LLM        map[string]*LLMConfig   `json:"llm" yaml:"llm" mapstructure:"llm"`
 }
 
 type LoggerConfig struct {
@@ -77,4 +79,16 @@ func (cfg *HttpServerConfig) GetListen() (string, error) {
 		return "", errors.New("empty port")
 	}
 	return fmt.Sprintf("%s:%d", hsc.Host, hsc.Port), nil
+}
+
+type LLMConfig struct {
+	Name    string           `json:"name" yaml:"name" mapstructure:"name"`
+	BaseUrl string           `json:"baseUrl" yaml:"baseUrl" mapstructure:"baseUrl"`
+	ApiKey  string           `json:"apiKey" yaml:"apiKey" mapstructure:"apiKey"`
+	Timeout time.Duration    `json:"timeout" yaml:"timeout" mapstructure:"timeout"`
+	Models  []LlmModelConfig `json:"models" yaml:"models" mapstructure:"models"`
+}
+type LlmModelConfig struct {
+	Name    string `json:"name" yaml:"name" mapstructure:"name"`
+	BaseUrl string `json:"baseUrl" yaml:"baseUrl" mapstructure:"baseUrl"`
 }

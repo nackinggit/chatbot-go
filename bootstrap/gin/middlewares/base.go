@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	domains = []string{"imgo.tv", "mgtv.com"}
+	domains = []string{}
 )
 
 type CORSConfig struct {

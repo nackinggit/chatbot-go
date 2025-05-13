@@ -12,7 +12,7 @@ DATE=$(date +%FT%T%z)
 RELEASE=${RELEASE:-v0.0.1}
 GEN_TARGET=${GEN_TARGET:-yes}
 
-VER_PKG=git.imgo.tv/ft/go-ceres/pkg/version
+VER_PKG=execfile
 LDFLAGS="-w -s -X ${VER_PKG}.version=${RELEASE} -X ${VER_PKG}.date=${DATE} -X ${VER_PKG}.commit=${COMMMIT} -X ${VER_PKG}.branch=${BRANCH}"
 
 echo "start build"

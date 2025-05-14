@@ -59,6 +59,15 @@ type HttpConfig struct {
 	MaxHeaderBytes    int           `json:"maxHeaderBytes" yaml:"maxHeaderBytes" mapstructure:"maxHeaderBytes"`
 	GracefulTimeout   time.Duration `json:"gracefulTimeout" yaml:"gracefulTimeout" mapstructure:"gracefulTimeout"`
 	Tls               *TlsConfig    `json:"tls" yaml:"tls" mapstructure:"tls"`
+	CORS              *CORSConfig   `json:"cors" yaml:"cors" mapstructure:"cors"`
+}
+
+type CORSConfig struct {
+	AllowAllOrigins bool          `json:"allowAllOrigins" yaml:"allowAllOrigins" mapstructure:"allowAllOrigins"`
+	AllowOrigins    []string      `json:"allowOrigins" yaml:"allowOrigins" mapstructure:"allowOrigins"`
+	AllHeaders      []string      `json:"allHeaders" yaml:"allHeaders" mapstructure:"allHeaders"`
+	MaxAge          time.Duration `json:"maxAge" yaml:"maxAge" mapstructure:"maxAge"`
+	Domains         []string      `json:"domains" yaml:"domains" mapstructure:"domains"`
 }
 
 type TlsConfig struct {
@@ -82,13 +91,14 @@ func (cfg *HttpServerConfig) GetListen() (string, error) {
 }
 
 type LLMConfig struct {
-	Name    string           `json:"name" yaml:"name" mapstructure:"name"`
-	BaseUrl string           `json:"baseUrl" yaml:"baseUrl" mapstructure:"baseUrl"`
-	ApiKey  string           `json:"apiKey" yaml:"apiKey" mapstructure:"apiKey"`
-	Timeout time.Duration    `json:"timeout" yaml:"timeout" mapstructure:"timeout"`
-	Models  []LlmModelConfig `json:"models" yaml:"models" mapstructure:"models"`
+	Name       string           `json:"name" yaml:"name" mapstructure:"name"`
+	BaseUrl    string           `json:"baseUrl" yaml:"baseUrl" mapstructure:"baseUrl"`
+	ApiKey     string           `json:"apiKey" yaml:"apiKey" mapstructure:"apiKey"`
+	Timeout    time.Duration    `json:"timeout" yaml:"timeout" mapstructure:"timeout"`
+	MaxRetries int              `json:"maxRetries" yaml:"maxRetries" mapstructure:"maxRetries"`
+	Models     []LlmModelConfig `json:"models" yaml:"models" mapstructure:"models"`
 }
 type LlmModelConfig struct {
-	Name    string `json:"name" yaml:"name" mapstructure:"name"`
-	BaseUrl string `json:"baseUrl" yaml:"baseUrl" mapstructure:"baseUrl"`
+	Name  string `json:"name" yaml:"name" mapstructure:"name"`
+	Model string `json:"model" yaml:"model" mapstructure:"model"`
 }

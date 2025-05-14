@@ -8,7 +8,6 @@ import (
 	"com.imilair/chatbot/pkg/llm/api/doubao"
 )
 
-var apis = map[string]base.LLMApi{}
 var models = map[string]base.LLMModel{}
 
 var register = map[string]base.InitApi{
@@ -21,7 +20,14 @@ func Init(cfgs map[string]*config.LLMConfig) error {
 		if initApi == nil {
 			return fmt.Errorf("api %s not registered", name)
 		}
-		apis[name] = initApi(cfg)
+		llmapi := initApi(cfg)
+		for _, model := range cfg.Models {
+			models[model.Name] = base.LLMModel{
+				Api:   llmapi,
+				Name:  model.Name,
+				Model: model.Model,
+			}
+		}
 	}
 	return nil
 }

@@ -1,22 +1,79 @@
 package base
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 
+	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/pkg/util"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/packages/ssestream"
 )
 
-type MessageOutput struct {
-	ReasoningContent string `json:"reasoning"`
-	Content          string `json:"content"`
-	Role             string `json:"role"`
-}
+type MessageRole string
+
+const (
+	USER      MessageRole = "user"
+	SYSTEM    MessageRole = "system"
+	Assistant MessageRole = "assistant"
+)
 
 type MessageInput struct {
 	StringContent      string         `json:"content,omitempty"`            // 文本input
 	MultiModelContents []InputContent `json:"multiModelContents,omitempty"` // 多模态inputs
-	Role               string         `json:"role"`
+	Role               MessageRole    `json:"role"`
+}
+
+func (input *MessageInput) ToOpenaiMessage() (res openai.ChatCompletionMessageParamUnion, err error) {
+	role := input.Role
+	if role == USER {
+		return input.openaiUserMessage()
+	} else if role == SYSTEM {
+		return input.openaiSystemMessage()
+	} else if role == Assistant {
+		return input.openaiAssistantMessage()
+	}
+	return res, fmt.Errorf("unknown message role: %s", role)
+}
+
+func (input *MessageInput) openaiSystemMessage() (res openai.ChatCompletionMessageParamUnion, err error) {
+	if input.StringContent != "" {
+		res = openai.SystemMessage(input.StringContent)
+	} else {
+		err = fmt.Errorf("invalid system message input: %v", input)
+	}
+	return res, err
+}
+
+func (input *MessageInput) openaiAssistantMessage() (res openai.ChatCompletionMessageParamUnion, err error) {
+	if input.StringContent != "" {
+		res = openai.AssistantMessage(input.StringContent)
+	} else {
+		err = fmt.Errorf("invalid assistant message input: %v", input)
+	}
+	return res, err
+}
+
+func (input *MessageInput) openaiUserMessage() (res openai.ChatCompletionMessageParamUnion, err error) {
+	if input.StringContent != "" {
+		res = openai.UserMessage(input.StringContent)
+	} else if len(input.MultiModelContents) > 0 {
+		ms := []openai.ChatCompletionContentPartUnionParam{}
+		for _, v := range input.MultiModelContents {
+			switch v.Type {
+			case Text:
+				ms = append(ms, openai.TextContentPart(v.Content))
+			case Image:
+				ms = append(ms, openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
+					URL: v.Content,
+				}))
+			}
+		}
+		res = openai.UserMessage(ms)
+	} else {
+		err = fmt.Errorf("invalid message input: %v", input)
+	}
+	return res, err
 }
 
 type InputContent struct {
@@ -31,66 +88,81 @@ const (
 	Image InputType = "image"
 )
 
-func (input MessageInput) ToOpenaiMessage() (m openai.ChatCompletionMessageParamUnion, err error) {
-	r, err := convertInputContent(input)
-	if err != nil {
-		return m, err
-	}
-
-	switch input.Role {
-	case "user":
-		if v, ok := r.(string); ok {
-			m = openai.UserMessage(v)
-		} else if v, ok := r.([]openai.ChatCompletionContentPartUnionParam); ok {
-			m = openai.UserMessage(v)
-		}
-	case "assistant":
-		if v, ok := r.(string); ok {
-			m = openai.AssistantMessage(v)
-		} else if _, ok := r.([]openai.ChatCompletionContentPartUnionParam); ok {
-			err = errors.New("assistant message cannot contain multiple content parts")
-		}
-	case "system":
-		if v, ok := r.(string); ok {
-			m = openai.SystemMessage(v)
-		} else if v, ok := r.([]openai.ChatCompletionContentPartUnionParam); ok {
-			tv := make([]openai.ChatCompletionContentPartTextParam, len(v))
-			for i, content := range v {
-				if content.OfText != nil {
-					tv[i] = *content.OfText
-				} else {
-					err = errors.New("system message cannot contain content parts other than text")
-					break
-				}
-			}
-			m = openai.SystemMessage(tv)
-		}
-	default:
-		err = fmt.Errorf("unknown message role: %s", input.Role)
-	}
-	return m, err
+type OpenaiCompatiableMessageOutput struct {
+	OpenaiChatCompletion *openai.ChatCompletion
 }
 
-func convertInputContent(input MessageInput) (output any, err error) {
-	if input.StringContent != "" {
-		output = input.StringContent
-	} else if len(input.MultiModelContents) > 0 {
-		var openaiContents []openai.ChatCompletionContentPartUnionParam
-		for _, content := range input.MultiModelContents {
-			switch content.Type {
-			case Text:
-				openaiContents = append(openaiContents, openai.TextContentPart(content.Content))
-			case Image:
-				openaiContents = append(openaiContents, openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
-					URL: content.Content,
-				}))
-			default:
-				err = fmt.Errorf("invalid input content type: %s", content.Type)
-			}
-			output = openaiContents
-		}
+type OpenaiChatCompletionMessage struct {
+	openai.ChatCompletionMessage
+	ReasoningContent string `json:"reasoning_content"`
+}
+
+func (output *OpenaiCompatiableMessageOutput) MessageOutput() (res Output, err error) {
+	c := output.OpenaiChatCompletion
+	resp := c.Choices[0].Message.RawJSON()
+	var message OpenaiChatCompletionMessage
+	err = util.Unmarshal([]byte(resp), &message)
+	if err != nil {
+		xlog.Warnf("Unmarshal: %v", err)
 	} else {
-		err = fmt.Errorf("invalid input content type: %v", input)
+		res = Output{
+			Content:          message.Content,
+			ReasoningContent: message.ReasoningContent,
+			Role:             MessageRole(message.Role),
+			RawJson:          c.RawJSON(),
+		}
 	}
-	return output, err
+
+	return res, err
+}
+
+type OpenaiCompatiableMessageStream struct {
+	OpenaiCompatiableStream *ssestream.Stream[openai.ChatCompletionChunk]
+}
+
+func (stream *OpenaiCompatiableMessageStream) Stream() *ssestream.Stream[OutputChunk] {
+	ostream := stream.OpenaiCompatiableStream
+	return ssestream.NewStream[OutputChunk](&openaiDecoder{
+		ostream: ostream,
+	}, ostream.Err())
+}
+
+type openaiDecoder struct {
+	ostream *ssestream.Stream[openai.ChatCompletionChunk]
+	evt     ssestream.Event
+	err     error
+}
+
+func (s *openaiDecoder) Next() bool {
+	data := bytes.NewBuffer(nil)
+	if s.ostream.Next() {
+		cur := s.ostream.Current()
+		delta := cur.Choices[0].Delta
+		var output OutputChunk
+		s.err = util.Unmarshal([]byte(delta.RawJSON()), &output)
+		output.RawJSON = cur.RawJSON()
+		value, _ := util.Marshal(output)
+		_, s.err = data.Write(value)
+		s.evt = ssestream.Event{
+			Data: data.Bytes(),
+		}
+		return true
+	}
+
+	if s.ostream.Err() != nil {
+		s.err = s.ostream.Err()
+	}
+	return false
+}
+
+func (s *openaiDecoder) Event() ssestream.Event {
+	return s.evt
+}
+
+func (s *openaiDecoder) Close() error {
+	return s.ostream.Close()
+}
+
+func (s *openaiDecoder) Err() error {
+	return s.err
 }

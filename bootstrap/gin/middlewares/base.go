@@ -6,22 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"com.imilair/chatbot/bootstrap/config"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	domains = []string{}
-)
-
-type CORSConfig struct {
-	AllowAllOrigins bool          `yaml:"allowAllOrigins"`
-	AllowOrigins    []string      `yaml:"allowOrigins"`
-	AllHeaders      []string      `yaml:"allHeaders"`
-	MaxAge          time.Duration `yaml:"maxAge"`
-}
-
-func CORSWithConfig(cfg *CORSConfig) gin.HandlerFunc {
+func CORSWithConfig(cfg *config.CORSConfig) gin.HandlerFunc {
 	corsCfg := cors.Config{
 		AllowAllOrigins:  cfg.AllowAllOrigins,
 		AllowCredentials: true,
@@ -32,7 +22,7 @@ func CORSWithConfig(cfg *CORSConfig) gin.HandlerFunc {
 			if err != nil {
 				host = u.Host
 			}
-			for _, domain := range domains {
+			for _, domain := range cfg.Domains {
 				if strings.HasSuffix(host, domain) {
 					return true
 				}
@@ -40,10 +30,8 @@ func CORSWithConfig(cfg *CORSConfig) gin.HandlerFunc {
 			return false
 		},
 	}
-
 	if !cfg.AllowAllOrigins {
 		corsCfg.AllowOrigins = cfg.AllowOrigins
 	}
-
 	return cors.New(corsCfg)
 }

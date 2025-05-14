@@ -226,7 +226,7 @@ func consoleConfig() zapcore.EncoderConfig {
 
 	// 自定义文件：行号输出项
 	customCallerEncoder := func(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString("[" + caller.TrimmedPath() + "]")
+		enc.AppendString("[" + caller.FullPath() + "]")
 	}
 
 	return zapcore.EncoderConfig{

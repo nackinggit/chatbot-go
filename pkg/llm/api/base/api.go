@@ -29,6 +29,7 @@ func (o *OutputChunk) HumanText() string {
 }
 
 type LLMApi interface {
+	Cfg() *config.LLMConfig
 	Chat(ctx context.Context, model string, messages []MessageInput) (Output, error)
 	StreamChat(ctx context.Context, model string, messages []MessageInput) *ssestream.Stream[OutputChunk]
 }

@@ -97,3 +97,7 @@ func (o *OpenaiCompatiableApi) StreamChat(ctx context.Context, model string, mes
 	}
 	return s.Stream()
 }
+
+func (o *OpenaiCompatiableApi) Cfg() *config.LLMConfig {
+	return o.cfg
+}

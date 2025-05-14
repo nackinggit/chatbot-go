@@ -1,6 +1,7 @@
 package llm
 
 import (
+	"errors"
 	"fmt"
 
 	"com.imilair/chatbot/bootstrap/config"
@@ -9,6 +10,7 @@ import (
 )
 
 var models = map[string]base.LLMModel{}
+var apis = map[string]base.LLMApi{}
 
 var register = map[string]base.InitApi{
 	"doubao": doubao.InitApi,
@@ -21,6 +23,7 @@ func Init(cfgs map[string]*config.LLMConfig) error {
 			return fmt.Errorf("api %s not registered", name)
 		}
 		llmapi := initApi(cfg)
+		apis[name] = llmapi
 		for _, model := range cfg.Models {
 			models[model.Name] = base.LLMModel{
 				Api:   llmapi,
@@ -30,4 +33,12 @@ func Init(cfgs map[string]*config.LLMConfig) error {
 		}
 	}
 	return nil
+}
+
+func GetModel(name string) (base.LLMModel, error) {
+	if model, ok := models[name]; ok {
+		return model, nil
+	} else {
+		return base.LLMModel{}, errors.New("model not found")
+	}
 }

@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -79,4 +80,32 @@ func ConvertMapAny2Int(m map[string]string) map[string]any {
 		}
 	}
 	return newMap
+}
+
+func TryParseJson[T any](jsonStr string, dst *T) error {
+	idx := strings.Index(jsonStr, "{")
+	if idx < 0 {
+		return fmt.Errorf("json parse error: %s", jsonStr)
+	}
+	lastIdx := strings.LastIndex(jsonStr, "}")
+	if lastIdx < 0 {
+		return fmt.Errorf("json parse erro: %s", jsonStr)
+	}
+	maybejson := jsonStr[idx : lastIdx+1]
+
+	return json.Unmarshal([]byte(maybejson), dst)
+
+}
+
+func TryParseJsonArray[T any](jsonStr string, dst *[]T) error {
+	idx := strings.Index(jsonStr, "[")
+	if idx < 0 {
+		return fmt.Errorf("json parse error: %s", jsonStr)
+	}
+	lastIdx := strings.LastIndex(jsonStr, "]")
+	if lastIdx < 0 {
+		return fmt.Errorf("json parse error: %s", jsonStr)
+	}
+	maybejson := jsonStr[idx : lastIdx+1]
+	return json.Unmarshal([]byte(maybejson), dst)
 }

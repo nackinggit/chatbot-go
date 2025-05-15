@@ -17,7 +17,7 @@ func AESEncrypt(plainText string, keyText string) (cipherByte []byte, err error)
 		return nil, err
 	}
 	//加密字符串
-	cfb := cipher.NewCFBEncrypter(c, commonIV)
+	cfb := cipher.NewCTR(c, commonIV)
 	cipherByte = make([]byte, len(plainByte))
 	cfb.XORKeyStream(cipherByte, plainByte)
 	return
@@ -31,7 +31,7 @@ func AESDecrypt(cipherByte []byte, keyText string) (plainText string, err error)
 		return "", err
 	}
 	// 解密字符串
-	cfbdec := cipher.NewCFBDecrypter(c, commonIV)
+	cfbdec := cipher.NewCTR(c, commonIV)
 	plainByte := make([]byte, len(cipherByte))
 	cfbdec.XORKeyStream(plainByte, cipherByte)
 	plainText = string(plainByte)

@@ -1,7 +1,7 @@
 package config
 
-import "github.com/milvus-io/milvus-sdk-go/v2/client"
-
 type MilvusConfig struct {
-	client.Config
+	Address  string `json:"address" yaml:"address" mapstructure:"address"`    // Remote address, "localhost:19530".
+	Username string `json:"username" yaml:"username" mapstructure:"username"` // Username for auth.
+	Password string `json:"password" yaml:"password" mapstructure:"password"` // Password for auth.
 }

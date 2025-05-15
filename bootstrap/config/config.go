@@ -12,6 +12,8 @@ type Config struct {
 	MySql      map[string]*MySQLConfig     `json:"mysql" yaml:"mysql" mapstructure:"mysql"`
 	LLM        map[string]*LLMConfig       `json:"llm" yaml:"llm" mapstructure:"llm"`
 	Embedding  map[string]*EmbeddingConfig `json:"embedding" yaml:"embedding" mapstructure:"embedding"`
+	Milvus     *MilvusConfig               `json:"milvus" yaml:"milvus" mapstructure:"milvus"`
+	Redis      *RedisConfig                `json:"redis" yaml:"redis" mapstructure:"redis"`
 }
 
 func (c *Config) GetGracefulTimeout() time.Duration {

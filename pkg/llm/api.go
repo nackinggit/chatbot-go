@@ -6,19 +6,21 @@ import (
 
 	"com.imilair/chatbot/bootstrap/config"
 	"com.imilair/chatbot/pkg/llm/api/base"
-	"com.imilair/chatbot/pkg/llm/api/doubao"
 )
 
 var models = map[string]base.LLMModel{}
 var apis = map[string]base.LLMApi{}
 
-var register = map[string]base.InitApi{
-	"doubao": doubao.InitApi,
-}
+var register = map[string]base.InitApi{}
 
 func Init(cfgs map[string]*config.LLMConfig) error {
 	for name, cfg := range cfgs {
-		initApi := register[name]
+		var initApi base.InitApi
+		if cfg.OpenaiCompatiable {
+			initApi = base.InitOpenaiCompatibleApi
+		} else {
+			initApi = register[name]
+		}
 		if initApi == nil {
 			return fmt.Errorf("api %s not registered", name)
 		}

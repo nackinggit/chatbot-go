@@ -17,7 +17,7 @@ type OpenaiCompatiableApi struct {
 
 var httpclient = http.Client{}
 
-func NewOpenaiCompatibleApi(cfg *config.LLMConfig) *OpenaiCompatiableApi {
+func initOpenaiCompatibleApi(cfg *config.LLMConfig) *OpenaiCompatiableApi {
 	toOpts := func(cfg *config.LLMConfig) []option.RequestOption {
 		opts := []option.RequestOption{
 			option.WithHTTPClient(&httpclient),
@@ -100,4 +100,8 @@ func (o *OpenaiCompatiableApi) StreamChat(ctx context.Context, model string, mes
 
 func (o *OpenaiCompatiableApi) Cfg() *config.LLMConfig {
 	return o.cfg
+}
+
+func InitOpenaiCompatibleApi(cfg *config.LLMConfig) LLMApi {
+	return initOpenaiCompatibleApi(cfg)
 }

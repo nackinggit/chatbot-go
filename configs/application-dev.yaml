@@ -1,4 +1,37 @@
+httpServer:
+  http:
+    port: 8081
+  gin:
+    mode: debug
 logger:
   level: debug
-  
-  
+  console: true
+mysqls:
+  - registerName: chatbot
+    dsn: localhost
+    debugMode: 3306
+    logLevel: root
+redis:
+  host: localhost
+  port: 6379
+  username: ""
+  password: ""
+  db: 0
+embeddings:
+  - registerService: doubao
+    company: doubao
+    apiKey: "123456"
+    maxRetries: 3
+    models:
+      - name: 12
+        model: ""
+        dims: [512, 1024, 2048]
+llms:
+  - name: doubao
+    baseUrl: "doubao"
+    apiKey: "123456"
+    maxRetries: 3
+    openaiCompatiable: true
+    models:
+      - name: "123456"
+        model: ""

@@ -15,7 +15,7 @@ func init() {
 	register["doubao"] = doubao.InitApi
 }
 
-func Init(cfgs map[string]*config.EmbeddingConfig) error {
+func Init(cfgs []*config.EmbeddingConfig) error {
 	for _, cfg := range cfgs {
 		if _, ok := register[cfg.RegisterService]; !ok {
 			return fmt.Errorf("embedding api not found: %s", cfg.RegisterService)

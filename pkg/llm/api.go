@@ -13,19 +13,19 @@ var apis = map[string]base.LLMApi{}
 
 var register = map[string]base.InitApi{}
 
-func Init(cfgs map[string]*config.LLMConfig) error {
-	for name, cfg := range cfgs {
+func Init(cfgs []*config.LLMConfig) error {
+	for _, cfg := range cfgs {
 		var initApi base.InitApi
 		if cfg.OpenaiCompatiable {
 			initApi = base.InitOpenaiCompatibleApi
 		} else {
-			initApi = register[name]
+			initApi = register[cfg.RegisterService]
 		}
 		if initApi == nil {
-			return fmt.Errorf("api %s not registered", name)
+			return fmt.Errorf("api %s not registered", cfg.Name)
 		}
 		llmapi := initApi(cfg)
-		apis[name] = llmapi
+		apis[cfg.RegisterService] = llmapi
 		for _, model := range cfg.Models {
 			models[model.Name] = base.LLMModel{
 				Api:   llmapi,

@@ -3,6 +3,7 @@ package config
 import "time"
 
 type LLMConfig struct {
+	RegisterService   string           `json:"registerService" yaml:"registerService" mapstructure:"registerService"`
 	Name              string           `json:"name" yaml:"name" mapstructure:"name"`
 	BaseUrl           string           `json:"baseUrl" yaml:"baseUrl" mapstructure:"baseUrl"`
 	ApiKey            string           `json:"apiKey" yaml:"apiKey" mapstructure:"apiKey"`

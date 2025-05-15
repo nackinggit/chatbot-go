@@ -18,7 +18,6 @@ aigc-backend2c
 *.jpeg
 *.png
 .DS_Store
-app-local.yaml
-common-local.yaml
+*-local.yaml
 *.xlsx
 *_test.go

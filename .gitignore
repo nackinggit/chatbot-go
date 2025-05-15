@@ -21,3 +21,4 @@ aigc-backend2c
 app-local.yaml
 common-local.yaml
 *.xlsx
+*_test.go

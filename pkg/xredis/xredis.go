@@ -13,21 +13,23 @@ type XRedisClient struct {
 	*redis.Client
 }
 
-func NewClient(cfg *config.RedisConfig) *XRedisClient {
+var redisclient *XRedisClient
+
+func Init(cfg *config.RedisConfig) {
 	opts := redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 		Password: cfg.Password,
 		Username: cfg.Username,
 		DB:       cfg.DB,
 	}
-	return &XRedisClient{
+	redisclient = &XRedisClient{
 		cfg:    cfg,
 		Client: redis.NewClient(&opts),
 	}
 }
 
-func ExecRedisCmd[T any](mr *XRedisClient, fn func(mr *XRedisClient) (T, error)) (T, error) {
-	resp, err := fn(mr)
+func ExecRedisCmd[T any](fn func(mr *XRedisClient) (T, error)) (T, error) {
+	resp, err := fn(redisclient)
 	if err != nil {
 		xlog.Warnf("ExecRedisCmd error: %v", err)
 		return resp, err

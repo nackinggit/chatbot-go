@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"sync"
 
 	"com.imilair/chatbot/bootstrap"
@@ -28,24 +29,28 @@ func NewService(si ServiceI) *service {
 
 var reigstered = sync.Map{}
 
-func Init() {
+func Init() error {
+	var err error
 	reigstered.Range(func(key, value any) bool {
 		svc, ok := value.(*service)
 		if ok {
 			svc.once.Do(func() {
-				xlog.Infof("Init service %s", svc.is.Name())
-				err := svc.is.Init()
+				xlog.Infof("init service %s...", svc.is.Name())
+				err = svc.is.Init()
 				if err != nil {
-					panic(err)
+					xlog.Warnf("init service %s failed: %v", svc.is.Name(), err)
+					return
 				}
 				svc.inited = true
+				xlog.Infof("init service %s done.", svc.is.Name())
 			})
 		} else {
 			xlog.Warn("Invalid service type %T", value)
-			panic("Invalid service type")
+			err = errors.New("invalid service type")
 		}
-		return true
+		return err == nil
 	})
+	return err
 }
 
 func Register(s ServiceI) {

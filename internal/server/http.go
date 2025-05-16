@@ -1,6 +1,8 @@
 package server
 
 import (
+	"io"
+
 	"com.imilair/chatbot/bootstrap/gin/middlewares"
 	"com.imilair/chatbot/internal/bcode"
 	"com.imilair/chatbot/pkg/util"
@@ -23,9 +25,15 @@ func JSON(ctx *gin.Context, obj any, err error) {
 
 func SSEResponse[T any](ctx *gin.Context, stream *ssestream.Stream[T]) {
 	for stream.Next() {
-		ctx.SSEvent("data", util.JsonString(stream.Current()))
+		ctx.Stream(func(w io.Writer) bool {
+			ctx.SSEvent("data", util.JsonString(stream.Current()))
+			return true
+		})
 	}
 	if stream.Err() != nil {
-		ctx.SSEvent("error", stream.Err().Error())
+		ctx.Stream(func(w io.Writer) bool {
+			ctx.SSEvent("data", util.JsonString(stream.Current()))
+			return false
+		})
 	}
 }

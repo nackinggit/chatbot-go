@@ -17,7 +17,12 @@ import (
 	"com.imilair/chatbot/bootstrap/config"
 	xgin "com.imilair/chatbot/bootstrap/gin"
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/pkg/embedding"
+	"com.imilair/chatbot/pkg/llm"
 	"com.imilair/chatbot/pkg/util"
+	"com.imilair/chatbot/pkg/xmilvus"
+	"com.imilair/chatbot/pkg/xmysql"
+	"com.imilair/chatbot/pkg/xredis"
 
 	ginmiddlewars "com.imilair/chatbot/bootstrap/gin/middlewares"
 	"github.com/gin-gonic/gin"
@@ -57,6 +62,30 @@ func (a *app) Init(router func(e *gin.Engine), middlewares ...gin.HandlerFunc) e
 	}
 	if Config.Logger != nil {
 		xlog.InitLog(Config.Logger)
+	}
+	if len(Config.Embedding) > 0 {
+		err = embedding.Init(Config.Embedding)
+		if err != nil {
+			return err
+		}
+	}
+	if len(Config.MySql) > 0 {
+		xmysql.Init(Config.MySql)
+	}
+	if len(Config.LLMS) > 0 {
+		err = llm.Init(Config.LLMS)
+		if err != nil {
+			return err
+		}
+	}
+	if Config.Redis != nil {
+		xredis.Init(Config.Redis)
+	}
+	if Config.Milvus != nil {
+		err = xmilvus.Init(Config.Milvus)
+		if err != nil {
+			return err
+		}
 	}
 	a.httpRouter = router
 	a.middlewares = append(a.middlewares, ginmiddlewars.LogHandler())
@@ -195,7 +224,7 @@ func Run(server Server, router func(e *gin.Engine), middlewares ...gin.HandlerFu
 
 	r := &appRunner{
 		signals: make(chan os.Signal, 1),
-		service: server,
+		server:  server,
 		errCh:   make(chan error, 2),
 	}
 	r.run()
@@ -205,7 +234,7 @@ func Run(server Server, router func(e *gin.Engine), middlewares ...gin.HandlerFu
 type appRunner struct {
 	stop    int32
 	signals chan os.Signal
-	service Server
+	server  Server
 	wg      sync.WaitGroup
 	errCh   chan error
 }
@@ -219,7 +248,7 @@ func (r *appRunner) run() {
 func (r *appRunner) handleStart() {
 	r.wg.Add(1)
 
-	err := r.service.Start()
+	err := r.server.Start()
 	if err != nil {
 		r.errCh <- err
 	}
@@ -256,7 +285,7 @@ func (r *appRunner) handlStop() {
 		xlog.Infof("pre stop")
 	}
 
-	err = r.service.Stop()
+	err = r.server.Stop()
 	if err != nil {
 		xlog.Errorf("stop app error : %v", err)
 	} else {

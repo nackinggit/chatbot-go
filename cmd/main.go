@@ -17,7 +17,11 @@ func newServer() bootstrap.Server {
 
 // 创建或启动资源
 func (a *app) Start() error {
-	service.Init()
+	err := service.Init()
+	if err != nil {
+		xlog.Warnf("service init failed: %v", err)
+		return err
+	}
 	xlog.Info("service init success")
 	return nil
 }

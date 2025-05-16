@@ -3,8 +3,10 @@ package agents
 import (
 	"context"
 
+	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service"
+	"com.imilair/chatbot/pkg/llm"
 	"com.imilair/chatbot/pkg/llm/api/base"
 	"github.com/openai/openai-go/packages/ssestream"
 )
@@ -20,12 +22,11 @@ func (t *teacher) Name() string {
 }
 
 func (t *teacher) Init() (err error) {
-	// cfg := service.Config
-	// xlog.Infof("Teacher inited")
-	// t.questionAnalyserModel, err = llm.GetModel("QuestionAnalyser")
-	// if err != nil {
-	// 	return err
-	// }
+	xlog.Infof("Teacher inited")
+	t.questionAnalyserModel, err = llm.GetModel("QuestionAnalyser")
+	if err != nil {
+		return err
+	}
 	// t.answererModels, err =
 	return nil
 }

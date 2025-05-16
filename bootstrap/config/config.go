@@ -9,7 +9,7 @@ type Config struct {
 	App        *Application       `json:"app" yaml:"app" mapstructure:"app"`
 	HttpServer *HttpServerConfig  `json:"httpServer" yaml:"httpServer" mapstructure:"httpServer"`
 	Logger     *LoggerConfig      `json:"logger" yaml:"logger" mapstructure:"logger"`
-	MySql      []*MySQLConfig     `json:"mysqls" yaml:"mysqls" mapstructure:"mysqls"`
+	MySql      []*MySQLConfig     `json:"mysql" yaml:"mysql" mapstructure:"mysql"`
 	LLMS       []*LLMConfig       `json:"llms" yaml:"llms" mapstructure:"llms"`
 	Embedding  []*EmbeddingConfig `json:"embedding" yaml:"embedding" mapstructure:"embedding"`
 	Milvus     *MilvusConfig      `json:"milvus" yaml:"milvus" mapstructure:"milvus"`

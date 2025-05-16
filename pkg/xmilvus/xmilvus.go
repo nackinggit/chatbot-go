@@ -13,19 +13,22 @@ type XMilvus struct {
 	cfg    *config.MilvusConfig
 }
 
-func NewXMilvus(cfg *config.MilvusConfig) (*XMilvus, error) {
+var xclient *XMilvus
+
+func Init(cfg *config.MilvusConfig) error {
 	client, err := client.NewClient(context.Background(), client.Config{
 		Address:  cfg.Address,
 		Username: cfg.Username,
 		Password: cfg.Password,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &XMilvus{
+	xclient = &XMilvus{
 		client: client,
 		cfg:    cfg,
-	}, nil
+	}
+	return nil
 }
 
 func (x *XMilvus) Close() {
@@ -33,4 +36,8 @@ func (x *XMilvus) Close() {
 		xlog.Infof("Close Milvus client: %s", x.cfg.Address)
 		x.client.Close()
 	}
+}
+
+func GetClient() *XMilvus {
+	return xclient
 }

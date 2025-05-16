@@ -13,8 +13,8 @@ func GetDB(name string) *gorm.DB {
 	return dbs[name]
 }
 
-func Init(cfgs map[string]config.MySQLConfig) {
-	convertCfg := func(cfg config.MySQLConfig) (mysql.Config, bool) {
+func Init(cfgs []*config.MySQLConfig) {
+	convertCfg := func(cfg *config.MySQLConfig) (mysql.Config, bool) {
 		return mysql.Config{
 			DSN:                           cfg.DSN,
 			SkipInitializeWithVersion:     cfg.SkipInitializeWithVersion,
@@ -33,7 +33,7 @@ func Init(cfgs map[string]config.MySQLConfig) {
 			DontSupportDropConstraint: cfg.DontSupportDropConstraint,
 		}, cfg.DebugMode
 	}
-	for name, cfg := range cfgs {
+	for _, cfg := range cfgs {
 		mcfg, debug := convertCfg(cfg)
 		level := logger.Info
 		switch cfg.LogLevel {
@@ -46,7 +46,7 @@ func Init(cfgs map[string]config.MySQLConfig) {
 		case "silent":
 			level = logger.Silent
 		}
-		dbs[name] = NewMysql(mcfg, debug, logger.Default.LogMode(level))
+		dbs[cfg.RegisterName] = NewMysql(mcfg, debug, logger.Default.LogMode(level))
 	}
 }
 

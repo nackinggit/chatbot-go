@@ -5,6 +5,7 @@ import (
 	"com.imilair/chatbot/bootstrap/config"
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/server"
+	"com.imilair/chatbot/internal/service"
 )
 
 type app struct {
@@ -16,6 +17,7 @@ func newServer() bootstrap.Server {
 
 // 创建或启动资源
 func (a *app) Start() error {
+	service.Init()
 	xlog.Info("service init success")
 	return nil
 }

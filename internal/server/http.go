@@ -1,12 +1,31 @@
 package server
 
-import "github.com/gin-gonic/gin"
+import (
+	"com.imilair/chatbot/bootstrap/gin/middlewares"
+	"com.imilair/chatbot/internal/bcode"
+	"com.imilair/chatbot/pkg/util"
+	"github.com/gin-gonic/gin"
+	"github.com/openai/openai-go/packages/ssestream"
+)
 
 func Route(e *gin.Engine) {
-	apiV1 := e.Group("/api/v1/")
-	apiV1.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+	apiV1 := e.Group("/api")
+	apiV1.POST("/bot/question_pic_analyse", middlewares.StreamHeadersMiddleware(), qaAll)
+}
+
+func JSON(ctx *gin.Context, obj any, err error) {
+	if berr, ok := err.(bcode.BError); ok {
+		ctx.JSON(200, gin.H{"data": obj, "code": berr.Code(), "message": berr.Message()})
+	} else {
+		ctx.JSON(200, gin.H{"data": obj, "code": 500, "message": err.Error()})
+	}
+}
+
+func SSEResponse[T any](ctx *gin.Context, stream *ssestream.Stream[T]) {
+	for stream.Next() {
+		ctx.SSEvent("data", util.JsonString(stream.Current()))
+	}
+	if stream.Err() != nil {
+		ctx.SSEvent("error", stream.Err().Error())
+	}
 }

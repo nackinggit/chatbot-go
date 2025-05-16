@@ -1,0 +1,50 @@
+package agents
+
+import (
+	"context"
+
+	"com.imilair/chatbot/internal/model"
+	"com.imilair/chatbot/internal/service"
+	"com.imilair/chatbot/pkg/llm/api/base"
+	"github.com/openai/openai-go/packages/ssestream"
+)
+
+type teacher struct {
+	questionAnalyserModel *base.LLMModel
+	answererModels        []*base.LLMModel
+	judgeModel            *base.LLMModel
+}
+
+func (t *teacher) Name() string {
+	return "teacher"
+}
+
+func (t *teacher) Init() (err error) {
+	// cfg := service.Config
+	// xlog.Infof("Teacher inited")
+	// t.questionAnalyserModel, err = llm.GetModel("QuestionAnalyser")
+	// if err != nil {
+	// 	return err
+	// }
+	// t.answererModels, err =
+	return nil
+}
+
+func init() {
+	service.Register(&teacher{})
+}
+
+func Teacher() *teacher {
+	return service.Service[teacher]("teacher")
+}
+
+func (t *teacher) QuestionAnalyse(ctx context.Context, req *model.QuestionAnalyseRequest) *ssestream.Stream[base.OutputChunk] {
+	mi := base.MessageInput{
+		Role: base.USER,
+		MultiModelContents: []base.InputContent{
+			{Type: base.Image, Content: req.ImageUrl},
+		},
+	}
+	messages := []base.MessageInput{mi}
+	return t.questionAnalyserModel.StreamChat(ctx, messages)
+}

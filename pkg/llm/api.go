@@ -37,10 +37,10 @@ func Init(cfgs []*config.LLMConfig) error {
 	return nil
 }
 
-func GetModel(name string) (base.LLMModel, error) {
+func GetModel(name string) (*base.LLMModel, error) {
 	if model, ok := models[name]; ok {
-		return model, nil
+		return &model, nil
 	} else {
-		return base.LLMModel{}, errors.New("model not found")
+		return nil, errors.New("model not found")
 	}
 }

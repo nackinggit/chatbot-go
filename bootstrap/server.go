@@ -19,6 +19,7 @@ import (
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/pkg/util"
 
+	ginmiddlewars "com.imilair/chatbot/bootstrap/gin/middlewares"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
@@ -43,7 +44,7 @@ func init() {
 	flag.StringVar(&ConfigPath, "configpath", "./configs", "application config path")
 }
 
-func (a *app) Init() error {
+func (a *app) Init(router func(e *gin.Engine), middlewares ...gin.HandlerFunc) error {
 	if !flag.Parsed() {
 		flag.Parse()
 	}
@@ -57,6 +58,9 @@ func (a *app) Init() error {
 	if Config.Logger != nil {
 		xlog.InitLog(Config.Logger)
 	}
+	a.httpRouter = router
+	a.middlewares = append(a.middlewares, ginmiddlewars.LogHandler())
+	a.middlewares = append(a.middlewares, middlewares...)
 	return nil
 }
 
@@ -115,7 +119,7 @@ func (a *app) start() error {
 		attachedMonitor = true
 		monitor := e.Group("/monitor")
 		monitor.GET("/health", DefaultHealthCheckHandler)
-		monitor.GET("/prometheus", DefaultHealthCheckHandler)
+		monitor.GET("/prometheus", DefaultPrometheusHandler)
 	}
 
 	if Config.HttpServer != nil {
@@ -134,6 +138,7 @@ func (a *app) start() error {
 				defer recovery(func(i any) {
 					errCh <- fmt.Errorf("panic : %v", i)
 				})
+				xlog.Infof("gin server start at port: %v", httpServerCfg.Http.Port)
 				errCh <- svr.Start()
 			}()
 		}
@@ -176,36 +181,21 @@ func (a *app) postStop() error {
 	return nil
 }
 
-type BaseApp struct {
-}
-
-func (a *BaseApp) Start() error {
-	return nil
-}
-
-func (a *BaseApp) Stop() error {
-	return nil
-}
-
-func (a *BaseApp) Config() any {
-	return nil
-}
-
 type Server interface {
 	Start() error
 	Stop() error
-	Config() interface{}
+	Config() *config.Config
 }
 
-func Run(a Server) {
-	if err := gapp.Init(); err != nil {
+func Run(server Server, router func(e *gin.Engine), middlewares ...gin.HandlerFunc) {
+	if err := gapp.Init(router, middlewares...); err != nil {
 		xlog.Fatalf("application init error : %v", err)
 		panic(err)
 	}
 
 	r := &appRunner{
 		signals: make(chan os.Signal, 1),
-		service: a,
+		service: server,
 		errCh:   make(chan error, 2),
 	}
 	r.run()

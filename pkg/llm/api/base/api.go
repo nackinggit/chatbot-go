@@ -3,6 +3,7 @@ package base
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"com.imilair/chatbot/bootstrap/config"
 	"github.com/openai/openai-go/packages/ssestream"
@@ -14,7 +15,13 @@ type Output struct {
 	ReasoningContent string      `json:"reasoning"`
 	Content          string      `json:"content"`
 	Role             MessageRole `json:"role"`
+	Exception        string      `json:"exception"`
 	RawJson          string      `json:"rawJson"`
+}
+
+func (o *Output) Trim() {
+	o.ReasoningContent = strings.TrimSpace(o.ReasoningContent)
+	o.Content = strings.TrimSpace(o.Content)
 }
 
 type OutputChunk struct {

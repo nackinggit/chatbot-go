@@ -35,12 +35,12 @@ func initOpenaiCompatibleApi(cfg *config.LLMConfig) *OpenaiCompatiableApi {
 			opts = append(opts, option.WithMaxRetries(cfg.MaxRetries))
 		}
 
-		// 拦截器
-		middlewares := []option.Middleware{}
-		middlewares = append(middlewares, func(request *http.Request, nextfn option.MiddlewareNext) (*http.Response, error) {
-			return nextfn(request)
-		})
-		opts = append(opts, option.WithMiddleware(middlewares...))
+		// // 拦截器
+		// middlewares := []option.Middleware{}
+		// middlewares = append(middlewares, func(request *http.Request, nextfn option.MiddlewareNext) (*http.Response, error) {
+		// 	return nextfn(request)
+		// })
+		// opts = append(opts, option.WithMiddleware(middlewares...))
 		return opts
 	}
 	oc := openai.NewClient(toOpts(cfg)...)
@@ -63,19 +63,34 @@ func toOpenaiMessages(messages []MessageInput) ([]openai.ChatCompletionMessagePa
 }
 
 func (o *OpenaiCompatiableApi) Chat(ctx context.Context, model string, messages []MessageInput) (output Output, err error) {
-	oms, err := toOpenaiMessages(messages)
-	if err != nil {
-		return output, err
+	// oms, err := toOpenaiMessages(messages)
+	// if err != nil {
+	// 	return output, err
+	// }
+	// cc, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+	// 	Messages: oms,
+	// 	Model:    model,
+	// })
+	// if err != nil {
+	// 	return output, err
+	// }
+	// co := OpenaiCompatiableMessageOutput{OpenaiChatCompletion: cc}
+	// return co.MessageOutput()
+	stream := o.StreamChat(ctx, model, messages)
+	for stream.Next() {
+		oc := stream.Current()
+		output.Content += oc.Content
+		output.ReasoningContent += oc.ReasoningContent
+		output.Role = oc.Role
 	}
-	cc, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Messages: oms,
-		Model:    model,
-	})
-	if err != nil {
-		return output, err
+	if stream.Err() != nil {
+		err = stream.Err()
+		output.Content = ""
+		output.ReasoningContent = ""
+		output.Exception = err.Error()
 	}
-	co := OpenaiCompatiableMessageOutput{OpenaiChatCompletion: cc}
-	return co.MessageOutput()
+	output.Trim()
+	return output, err
 }
 
 func (o *OpenaiCompatiableApi) StreamChat(ctx context.Context, model string, messages []MessageInput) *ssestream.Stream[OutputChunk] {

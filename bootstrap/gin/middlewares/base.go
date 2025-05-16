@@ -1,12 +1,15 @@
 package middlewares
 
 import (
+	"bytes"
 	"net"
 	"net/url"
 	"strings"
 	"time"
 
 	"com.imilair/chatbot/bootstrap/config"
+	xlog "com.imilair/chatbot/bootstrap/log"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -34,4 +37,30 @@ func CORSWithConfig(cfg *config.CORSConfig) gin.HandlerFunc {
 		corsCfg.AllowOrigins = cfg.AllowOrigins
 	}
 	return cors.New(corsCfg)
+}
+
+type ResponseWriterWrapper struct {
+	gin.ResponseWriter
+	Body *bytes.Buffer // 缓存
+}
+
+func (w ResponseWriterWrapper) Write(b []byte) (int, error) {
+	w.Body.Write(b)
+	return w.ResponseWriter.Write(b)
+}
+
+func (w ResponseWriterWrapper) WriteString(s string) (int, error) {
+	w.Body.WriteString(s)
+	return w.ResponseWriter.WriteString(s)
+}
+
+func LogHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		now := time.Now()
+		xlog.Infof("request: %v", ctx.Request.URL.Path)
+		blw := &ResponseWriterWrapper{Body: bytes.NewBufferString(""), ResponseWriter: ctx.Writer}
+		ctx.Writer = blw
+		ctx.Next()
+		xlog.Infof("response: %v: %v, cost: %v", ctx.Request.URL.Path, ctx.Writer.Status(), time.Since(now))
+	}
 }

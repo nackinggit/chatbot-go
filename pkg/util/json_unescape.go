@@ -23,7 +23,10 @@ func Marshal(src any) ([]byte, error) {
 }
 
 func JsonString(d any) string {
-	data, _ := Marshal(d)
+	data, err := Marshal(d)
+	if err != nil {
+		return ""
+	}
 	return string(data)
 }
 

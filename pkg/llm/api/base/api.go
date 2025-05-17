@@ -37,8 +37,8 @@ func (o *OutputChunk) HumanText() string {
 
 type LLMApi interface {
 	Cfg() *config.LLMConfig
-	Chat(ctx context.Context, model string, messages []MessageInput) (Output, error)
-	StreamChat(ctx context.Context, model string, messages []MessageInput) *ssestream.Stream[OutputChunk]
+	Chat(ctx context.Context, model string, messages []*MessageInput) (Output, error)
+	StreamChat(ctx context.Context, model string, messages []*MessageInput) *ssestream.Stream[OutputChunk]
 }
 
 type LLMModel struct {
@@ -48,10 +48,10 @@ type LLMModel struct {
 	Api LLMApi
 }
 
-func (m *LLMModel) Chat(ctx context.Context, messages []MessageInput) (Output, error) {
+func (m *LLMModel) Chat(ctx context.Context, messages []*MessageInput) (Output, error) {
 	return m.Api.Chat(ctx, m.Model, messages)
 }
 
-func (m *LLMModel) StreamChat(ctx context.Context, messages []MessageInput) *ssestream.Stream[OutputChunk] {
+func (m *LLMModel) StreamChat(ctx context.Context, messages []*MessageInput) *ssestream.Stream[OutputChunk] {
 	return m.Api.StreamChat(ctx, m.Model, messages)
 }

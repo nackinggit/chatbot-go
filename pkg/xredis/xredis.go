@@ -5,6 +5,7 @@ import (
 
 	"com.imilair/chatbot/bootstrap/config"
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/pkg/util"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -16,6 +17,7 @@ type XRedisClient struct {
 var redisclient *XRedisClient
 
 func Init(cfg *config.RedisConfig) {
+	xlog.Infof("init redis: %s", util.JsonString(cfg))
 	opts := redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 		Password: cfg.Password,

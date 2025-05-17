@@ -38,7 +38,7 @@ func Init() error {
 				xlog.Infof("init service %s...", svc.is.Name())
 				err = svc.is.Init()
 				if err != nil {
-					xlog.Warnf("init service %s failed: %v", svc.is.Name(), err)
+					xlog.Warnf("init service `%s` failed: %v", svc.is.Name(), err)
 					return
 				}
 				svc.inited = true

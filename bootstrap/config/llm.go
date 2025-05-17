@@ -13,6 +13,7 @@ type LLMConfig struct {
 	OpenaiCompatiable bool             `json:"openaiCompatiable" yaml:"openaiCompatiable" mapstructure:"openaiCompatiable"`
 }
 type LlmModelConfig struct {
-	Name  string `json:"name" yaml:"name" mapstructure:"name"`
-	Model string `json:"model" yaml:"model" mapstructure:"model"`
+	Name   string `json:"name" yaml:"name" mapstructure:"name"`
+	Model  string `json:"model" yaml:"model" mapstructure:"model"`
+	Remark string `json:"remark" yaml:"remark" mapstructure:"remark"`
 }

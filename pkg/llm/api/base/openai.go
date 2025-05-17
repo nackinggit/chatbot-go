@@ -50,7 +50,7 @@ func initOpenaiCompatibleApi(cfg *config.LLMConfig) *OpenaiCompatiableApi {
 	}
 }
 
-func toOpenaiMessages(messages []MessageInput) ([]openai.ChatCompletionMessageParamUnion, error) {
+func toOpenaiMessages(messages []*MessageInput) ([]openai.ChatCompletionMessageParamUnion, error) {
 	var msgs []openai.ChatCompletionMessageParamUnion
 	for _, m := range messages {
 		msg, err := m.ToOpenaiMessage()
@@ -62,7 +62,7 @@ func toOpenaiMessages(messages []MessageInput) ([]openai.ChatCompletionMessagePa
 	return msgs, nil
 }
 
-func (o *OpenaiCompatiableApi) Chat(ctx context.Context, model string, messages []MessageInput) (output Output, err error) {
+func (o *OpenaiCompatiableApi) Chat(ctx context.Context, model string, messages []*MessageInput) (output Output, err error) {
 	// oms, err := toOpenaiMessages(messages)
 	// if err != nil {
 	// 	return output, err
@@ -93,7 +93,7 @@ func (o *OpenaiCompatiableApi) Chat(ctx context.Context, model string, messages 
 	return output, err
 }
 
-func (o *OpenaiCompatiableApi) StreamChat(ctx context.Context, model string, messages []MessageInput) *ssestream.Stream[OutputChunk] {
+func (o *OpenaiCompatiableApi) StreamChat(ctx context.Context, model string, messages []*MessageInput) *ssestream.Stream[OutputChunk] {
 	oms, err := toOpenaiMessages(messages)
 	var s *OpenaiCompatiableMessageStream
 	if err != nil {

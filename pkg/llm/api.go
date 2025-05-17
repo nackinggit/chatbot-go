@@ -1,11 +1,12 @@
 package llm
 
 import (
-	"errors"
 	"fmt"
 
 	"com.imilair/chatbot/bootstrap/config"
+	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/pkg/llm/api/base"
+	"com.imilair/chatbot/pkg/util"
 )
 
 var models = map[string]base.LLMModel{}
@@ -14,6 +15,7 @@ var apis = map[string]base.LLMApi{}
 var register = map[string]base.InitApi{}
 
 func Init(cfgs []*config.LLMConfig) error {
+	xlog.Infof("init llm %s", util.JsonString(cfgs))
 	for _, cfg := range cfgs {
 		var initApi base.InitApi
 		if cfg.OpenaiCompatiable {
@@ -41,6 +43,6 @@ func GetModel(name string) (*base.LLMModel, error) {
 	if model, ok := models[name]; ok {
 		return &model, nil
 	} else {
-		return nil, errors.New("model not found")
+		return nil, fmt.Errorf("llm model %s not found", name)
 	}
 }

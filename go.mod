@@ -6,10 +6,12 @@ require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.0
+	github.com/go-playground/validator/v10 v10.26.0
 	github.com/milvus-io/milvus-sdk-go/v2 v2.4.2
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/prometheus/client_golang v1.22.0
+	github.com/redis/go-redis/v9 v9.8.0
 	github.com/rs/xid v1.6.0
 	github.com/spf13/viper v1.20.1
 	github.com/volcengine/volcengine-go-sdk v1.1.7
@@ -37,7 +39,6 @@ require (
 	github.com/gin-contrib/sse v1.0.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.26.0 // indirect
 	github.com/go-sql-driver/mysql v1.9.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
@@ -64,7 +65,6 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect

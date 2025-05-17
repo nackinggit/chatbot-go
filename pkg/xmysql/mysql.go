@@ -2,6 +2,8 @@ package xmysql
 
 import (
 	"com.imilair/chatbot/bootstrap/config"
+	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/pkg/util"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -33,6 +35,7 @@ func Init(cfgs []*config.MySQLConfig) {
 			DontSupportDropConstraint: cfg.DontSupportDropConstraint,
 		}, cfg.DebugMode
 	}
+	xlog.Infof("init mysql: %v", util.JsonString(cfgs))
 	for _, cfg := range cfgs {
 		mcfg, debug := convertCfg(cfg)
 		level := logger.Info

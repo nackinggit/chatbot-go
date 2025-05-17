@@ -16,6 +16,7 @@ type XMilvus struct {
 var xclient *XMilvus
 
 func Init(cfg *config.MilvusConfig) error {
+	xlog.Infof("Init Milvus client: %s", cfg.Address)
 	client, err := client.NewClient(context.Background(), client.Config{
 		Address:  cfg.Address,
 		Username: cfg.Username,

@@ -24,6 +24,13 @@ type MessageInput struct {
 	Role               MessageRole    `json:"role"`
 }
 
+func UserStringMessage(content string) MessageInput {
+	return MessageInput{
+		StringContent: content,
+		Role:          USER,
+	}
+}
+
 func (input *MessageInput) ToOpenaiMessage() (res openai.ChatCompletionMessageParamUnion, err error) {
 	role := input.Role
 	if role == USER {

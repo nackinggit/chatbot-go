@@ -120,10 +120,10 @@ func NewServer(cfg *config.HttpServerConfig, router func(*gin.Engine), middlewar
 	rwTo := 2 * time.Second
 	options := &ServerOptions{
 		maxListenLimit:    0,
-		readTimeout:       rwTo,
+		readTimeout:       -1,
 		readHeaderTimeout: rwTo,
-		writeTimeout:      rwTo,
-		idleTimeout:       rwTo,
+		writeTimeout:      -1,
+		idleTimeout:       -1,
 		gracefulTimeout:   time.Second * 5,
 		mode:              ModeRelease,
 		router:            router,

@@ -4,11 +4,8 @@ import (
 	"errors"
 	"sync"
 
-	"com.imilair/chatbot/bootstrap"
 	xlog "com.imilair/chatbot/bootstrap/log"
 )
-
-var Config = bootstrap.Config
 
 type ServiceI interface {
 	Name() string

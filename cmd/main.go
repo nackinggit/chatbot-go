@@ -2,7 +2,6 @@ package main
 
 import (
 	"com.imilair/chatbot/bootstrap"
-	"com.imilair/chatbot/bootstrap/config"
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/server"
 	"com.imilair/chatbot/internal/service"
@@ -33,8 +32,8 @@ func (a *app) Stop() error {
 }
 
 // 返回配置结构,如果返回nil,则需要自己初始化app配置
-func (a *app) Config() *config.Config {
-	return &bootstrap.Config
+func (a *app) Config() any {
+	return &service.ServiceConfig{}
 }
 
 func main() {

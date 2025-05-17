@@ -213,13 +213,20 @@ func (a *app) postStop() error {
 type Server interface {
 	Start() error
 	Stop() error
-	Config() *config.Config
+	Config() any
 }
 
 func Run(server Server, router func(e *gin.Engine), middlewares ...gin.HandlerFunc) {
 	if err := gapp.Init(router, middlewares...); err != nil {
 		xlog.Fatalf("application init error : %v", err)
 		panic(err)
+	}
+
+	serviceCfg := server.Config()
+	if serviceCfg != nil {
+		if err := viper.Unmarshal(serviceCfg); err != nil {
+			panic(fmt.Errorf("service init err : %v", err))
+		}
 	}
 
 	r := &appRunner{

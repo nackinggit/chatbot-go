@@ -22,12 +22,20 @@ func (t *teacher) Name() string {
 }
 
 func (t *teacher) Init() (err error) {
+
 	xlog.Infof("init service `%s`", t.Name())
 	t.questionAnalyserModel, err = llm.GetModel("QuestionAnalyser")
 	if err != nil {
 		return err
 	}
-	// t.answererModels, err =
+	t.answererModels, err = llm.GetModels([]string{""})
+	if err != nil {
+		return err
+	}
+	t.judgeModel, err = llm.GetModel("Judge")
+	if err != nil {
+		return err
+	}
 	xlog.Info("Teacher inited")
 	return nil
 }
@@ -41,13 +49,12 @@ func Teacher() *teacher {
 }
 
 func (t *teacher) QuestionAnalyse(ctx context.Context, req *model.QuestionAnalyseRequest) *ssestream.Stream[base.OutputChunk] {
-	// mi := base.MessageInput{
-	// 	Role: base.USER,
-	// 	MultiModelContents: []base.InputContent{
-	// 		{Type: base.Image, Content: req.ImageUrl},
-	// 	},
-	// }
-	mi := base.UserStringMessage(req.ImageUrl)
+	mi := base.MessageInput{
+		Role: base.USER,
+		MultiModelContents: []base.InputContent{
+			{Type: base.Image, Content: req.ImageUrl},
+		},
+	}
 	messages := []*base.MessageInput{&mi}
 	return t.questionAnalyserModel.StreamChat(ctx, messages)
 }

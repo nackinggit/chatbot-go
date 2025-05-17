@@ -14,10 +14,15 @@ import (
 
 func Route(e *gin.Engine) {
 	apiV1 := e.Group("/api")
-	apiV1.POST("/bot/question_pic_analyse", qaAll)
+	botv1 := apiV1.Group("/bot")
+	{
+		botv1.POST("/question_pic_analyse", questionAnalyse)
+
+	}
+
 }
 
-func JSON[T any](ctx *gin.Context, obj any, err error, req T) {
+func JSONE[T any](ctx *gin.Context, obj any, err error, req T) {
 	if berr, ok := err.(bcode.BError); ok {
 		ctx.JSON(200, gin.H{"data": obj, "code": berr.Code(), "message": berr.Message()})
 	} else if ve, ok := err.(validator.ValidationErrors); ok {

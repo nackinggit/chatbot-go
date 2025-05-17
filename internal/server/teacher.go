@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func qaAll(ctx *gin.Context) {
+func questionAnalyse(ctx *gin.Context) {
 	var req model.QuestionAnalyseRequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		JSON(ctx, nil, err, req)
+		JSONE(ctx, nil, err, req)
 		return
 	}
 	SSEResponse(ctx, agents.Teacher().QuestionAnalyse(ctx, &req))

@@ -46,3 +46,15 @@ func GetModel(name string) (*base.LLMModel, error) {
 		return nil, fmt.Errorf("llm model %s not found", name)
 	}
 }
+
+func GetModels(names []string) ([]*base.LLMModel, error) {
+	llmmoldes := make([]*base.LLMModel, 0)
+	for _, name := range names {
+		if model, ok := models[name]; ok {
+			llmmoldes = append(llmmoldes, &model)
+		} else {
+			return nil, fmt.Errorf("llm model %s not found", name)
+		}
+	}
+	return llmmoldes, nil
+}

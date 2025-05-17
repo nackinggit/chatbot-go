@@ -100,7 +100,6 @@ func (o *OpenaiCompatiableApi) StreamChat(ctx context.Context, model string, mes
 		s = &OpenaiCompatiableMessageStream{
 			OpenaiCompatiableStream: ssestream.NewStream[openai.ChatCompletionChunk](nil, err),
 		}
-
 	} else {
 		stream := o.client.Chat.Completions.NewStreaming(ctx, openai.ChatCompletionNewParams{
 			Messages: oms,

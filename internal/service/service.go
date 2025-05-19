@@ -35,7 +35,7 @@ func Init() error {
 		svc, ok := value.(*service)
 		if ok {
 			svc.once.Do(func() {
-				xlog.Infof("init service %s...", svc.is.Name())
+				xlog.Infof("init service `%s`...", svc.is.Name())
 				err = svc.is.Init()
 				if err != nil {
 					xlog.Warnf("init service `%s` failed: %v", svc.is.Name(), err)

@@ -210,13 +210,13 @@ func (a *app) postStop() error {
 	return nil
 }
 
-type Server interface {
+type Server[T any] interface {
 	Start() error
 	Stop() error
-	Config() any
+	Config() *T
 }
 
-func Run(server Server, router func(e *gin.Engine), middlewares ...gin.HandlerFunc) {
+func Run[T any](server Server[T], router func(e *gin.Engine), middlewares ...gin.HandlerFunc) {
 	if err := gapp.Init(router, middlewares...); err != nil {
 		xlog.Fatalf("application init error : %v", err)
 		panic(err)
@@ -229,7 +229,7 @@ func Run(server Server, router func(e *gin.Engine), middlewares ...gin.HandlerFu
 		}
 	}
 
-	r := &appRunner{
+	r := &appRunner[T]{
 		signals: make(chan os.Signal, 1),
 		server:  server,
 		errCh:   make(chan error, 2),
@@ -238,21 +238,21 @@ func Run(server Server, router func(e *gin.Engine), middlewares ...gin.HandlerFu
 	r.Wait()
 }
 
-type appRunner struct {
+type appRunner[T any] struct {
 	stop    int32
 	signals chan os.Signal
-	server  Server
+	server  Server[T]
 	wg      sync.WaitGroup
 	errCh   chan error
 }
 
-func (r *appRunner) run() {
+func (r *appRunner[T]) run() {
 	go r.handleSignal()
 	go r.handleErr()
 	r.handleStart()
 }
 
-func (r *appRunner) handleStart() {
+func (r *appRunner[T]) handleStart() {
 	r.wg.Add(1)
 
 	err := r.server.Start()
@@ -265,7 +265,7 @@ func (r *appRunner) handleStart() {
 	})
 }
 
-func (r *appRunner) handlStop() {
+func (r *appRunner[T]) handlStop() {
 	if !atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
 		return
 	}
@@ -308,13 +308,13 @@ func (r *appRunner) handlStop() {
 	}
 }
 
-func (r *appRunner) Wait() {
+func (r *appRunner[T]) Wait() {
 	r.wg.Wait()
 	close(r.errCh)
 	_ = xlog.Sync()
 }
 
-func (r *appRunner) handleSignal() {
+func (r *appRunner[T]) handleSignal() {
 	signal.Notify(r.signals, syscall.SIGPIPE, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGABRT)
 	for {
 		sig := <-r.signals
@@ -328,7 +328,7 @@ func (r *appRunner) handleSignal() {
 	}
 }
 
-func (r *appRunner) handleErr() {
+func (r *appRunner[T]) handleErr() {
 	for {
 		err, ok := <-r.errCh
 		if !ok {

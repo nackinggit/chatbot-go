@@ -33,7 +33,7 @@ func (a *app) Stop() error {
 
 // 返回配置结构,如果返回nil,则需要自己初始化app配置
 func (a *app) Config() any {
-	return &service.ServiceConfig{}
+	return &service.Config
 }
 
 func main() {

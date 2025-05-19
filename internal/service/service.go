@@ -5,7 +5,10 @@ import (
 	"sync"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/internal/service/config"
 )
+
+var Config = config.ServiceConfig{}
 
 type ServiceI interface {
 	Name() string

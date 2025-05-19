@@ -1,14 +1,15 @@
 package agents
 
 import (
-	"context"
+	"io"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service"
 	"com.imilair/chatbot/pkg/llm"
 	"com.imilair/chatbot/pkg/llm/api/base"
-	"github.com/openai/openai-go/packages/ssestream"
+	"com.imilair/chatbot/pkg/util"
+	"github.com/gin-gonic/gin"
 )
 
 type teacher struct {
@@ -48,7 +49,7 @@ func Teacher() *teacher {
 	return service.Service[teacher]("teacher")
 }
 
-func (t *teacher) QuestionAnalyse(ctx context.Context, req *model.QuestionAnalyseRequest) *ssestream.Stream[base.OutputChunk] {
+func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.QuestionAnalyseRequest) {
 	mi := base.MessageInput{
 		Role: base.USER,
 		MultiModelContents: []base.InputContent{
@@ -56,5 +57,32 @@ func (t *teacher) QuestionAnalyse(ctx context.Context, req *model.QuestionAnalys
 		},
 	}
 	messages := []*base.MessageInput{&mi}
-	return t.questionAnalyserModel.StreamChat(ctx, messages)
+	stream := t.questionAnalyserModel.StreamChat(ctx, messages)
+	util.SSEHeader(ctx)
+
+	finalChunk := &model.QuestionAnalyseStreamChunk{}
+	ctx.Stream(func(w io.Writer) bool {
+		for stream.Next() {
+			chunk := stream.Current()
+			xlog.Infof("data: %v", chunk)
+			sc := &model.QuestionAnalyseStreamChunk{
+				StreamMessage: model.StreamMessage{
+					Reasoning: chunk.ReasoningContent,
+					Content:   chunk.Content,
+				},
+			}
+			ctx.SSEvent("data", util.JsonString(sc))
+			finalChunk.Content += sc.Content
+			finalChunk.Reasoning += sc.Reasoning
+			return true
+		}
+		if stream.Err() != nil {
+			finalChunk.Content = ""
+			finalChunk.Reasoning = ""
+			finalChunk.Exception = stream.Err().Error()
+		}
+		finalChunk.Endflag = true
+		ctx.SSEvent("data", util.JsonString(finalChunk))
+		return false
+	})
 }

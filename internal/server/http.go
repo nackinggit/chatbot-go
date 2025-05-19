@@ -66,5 +66,4 @@ func SSEResponse[T any](ctx *gin.Context, stream *ssestream.Stream[T]) {
 		}
 		return false
 	})
-
 }

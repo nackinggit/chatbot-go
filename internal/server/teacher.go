@@ -12,5 +12,5 @@ func questionAnalyse(ctx *gin.Context) {
 		JSONE(ctx, nil, err, req)
 		return
 	}
-	SSEResponse(ctx, agents.Teacher().QuestionAnalyse(ctx, &req))
+	agents.Teacher().QuestionAnalyse(ctx, &req)
 }

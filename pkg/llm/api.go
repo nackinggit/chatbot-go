@@ -9,7 +9,6 @@ import (
 	"com.imilair/chatbot/pkg/util"
 )
 
-var models = map[string]base.LLMModel{}
 var apis = map[string]base.LLMApi{}
 
 var register = map[string]base.InitApi{}
@@ -28,33 +27,14 @@ func Init(cfgs []*config.LLMConfig) error {
 		}
 		llmapi := initApi(cfg)
 		apis[cfg.RegisterService] = llmapi
-		for _, model := range cfg.Models {
-			models[model.Model] = base.LLMModel{
-				Api:   llmapi,
-				Name:  model.Name,
-				Model: model.Model,
-			}
-		}
 	}
 	return nil
 }
 
-func GetModel(modelModel string) (*base.LLMModel, error) {
-	if model, ok := models[modelModel]; ok {
-		return &model, nil
-	} else {
-		return nil, fmt.Errorf("llm model %s not found", modelModel)
+func GetApi(api string) (base.LLMApi, error) {
+	llmapi, ok := apis[api]
+	if !ok {
+		return nil, fmt.Errorf("api %s not found", api)
 	}
-}
-
-func GetModels(modelModels []string) ([]*base.LLMModel, error) {
-	llmmoldes := make([]*base.LLMModel, 0)
-	for _, modelModel := range modelModels {
-		if model, ok := models[modelModel]; ok {
-			llmmoldes = append(llmmoldes, &model)
-		} else {
-			return nil, fmt.Errorf("llm model %s not found", modelModel)
-		}
-	}
-	return llmmoldes, nil
+	return llmapi, nil
 }

@@ -6,6 +6,7 @@ import (
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service"
+	"com.imilair/chatbot/internal/service/config"
 	"com.imilair/chatbot/pkg/llm"
 	"com.imilair/chatbot/pkg/llm/api/base"
 	"com.imilair/chatbot/pkg/util"
@@ -13,9 +14,9 @@ import (
 )
 
 type teacher struct {
-	questionAnalyserModel *base.LLMModel
-	answererModels        []*base.LLMModel
-	judgeModel            *base.LLMModel
+	questionAnalyserModel *AgentModel
+	answererModels        []*AgentModel
+	judgeModel            *AgentModel
 }
 
 func (t *teacher) Name() string {
@@ -23,17 +24,40 @@ func (t *teacher) Name() string {
 }
 
 func (t *teacher) Init() (err error) {
+	initModel := func(cfg *config.BotConfig) (*AgentModel, error) {
+		api, err := llm.GetApi(cfg.Api)
+		if err != nil {
+			return nil, err
+		}
+		return &AgentModel{
+			LLMModel: &base.LLMModel{
+				Name:  cfg.Name,
+				Model: cfg.ModelKey,
+				Api:   api,
+			},
+			Cfg: cfg,
+		}, nil
+	}
 
 	xlog.Infof("init service `%s`", t.Name())
-	t.questionAnalyserModel, err = llm.GetModel("QuestionAnalyser")
+	teacherCfg := service.Config.Teacher
+	err = teacherCfg.Validate()
 	if err != nil {
 		return err
 	}
-	t.answererModels, err = llm.GetModels([]string{""})
+	t.questionAnalyserModel, err = initModel(teacherCfg.QuestionAnalyse)
 	if err != nil {
 		return err
 	}
-	t.judgeModel, err = llm.GetModel("Judge")
+	for _, am := range teacherCfg.AnswerModels {
+		m, e := initModel(am)
+		if e != nil {
+			return e
+		}
+		t.answererModels = append(t.answererModels, m)
+	}
+
+	t.judgeModel, err = initModel(teacherCfg.JudgeModel)
 	if err != nil {
 		return err
 	}

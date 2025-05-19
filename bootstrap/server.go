@@ -117,6 +117,11 @@ func initConfig() error {
 		if err != nil {
 			return err
 		}
+		viper.SetConfigName(fmt.Sprintf("service-%s", env))
+		err = viper.MergeInConfig()
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := viper.Unmarshal(&Config); err != nil {

@@ -17,7 +17,7 @@ func Route(e *gin.Engine) {
 	botv1 := apiV1.Group("/bot")
 	{
 		botv1.POST("/question_pic_analyse", questionAnalyse)
-
+		botv1.POST("/qa_all", qaAll)
 	}
 
 }

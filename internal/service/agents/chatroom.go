@@ -5,6 +5,8 @@ import (
 	"com.imilair/chatbot/internal/service"
 )
 
+var ChatRoomService *chatroom
+
 type chatroom struct {
 	topicRecModel *AgentModel
 	hostModel1    *AgentModel
@@ -35,6 +37,7 @@ func (t *chatroom) Init() (err error) {
 		return err
 	}
 	xlog.Infof("`%s` inited", t.Name())
+	ChatRoomService = t
 	return nil
 }
 

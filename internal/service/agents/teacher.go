@@ -2,6 +2,8 @@ package agents
 
 import (
 	"io"
+	"net/http"
+	"sync"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/model"
@@ -12,6 +14,8 @@ import (
 	"com.imilair/chatbot/pkg/util"
 	"github.com/gin-gonic/gin"
 )
+
+var TeacherService *teacher
 
 type teacher struct {
 	questionAnalyserModel *AgentModel
@@ -61,6 +65,7 @@ func (t *teacher) Init() (err error) {
 	if err != nil {
 		return err
 	}
+	TeacherService = t
 	xlog.Info("Teacher inited")
 	return nil
 }
@@ -109,4 +114,63 @@ func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.QuestionAnalyseRe
 		ctx.SSEvent("data", util.JsonString(finalChunk))
 		return false
 	})
+}
+
+func (t *teacher) AnswerQuestion(ctx *gin.Context, req *model.QARequest) {
+	models := []*AgentModel{}
+	if len(req.Models) > 0 {
+		for _, m := range req.Models {
+			var model *AgentModel
+			for _, mm := range t.answererModels {
+				if mm.Model == m {
+					model = mm
+					break
+				}
+			}
+			if model != nil {
+				models = append(models, model)
+			} else {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "Model not found"})
+			}
+		}
+	} else {
+		models = t.answererModels
+	}
+	mi := base.UserStringMessage(req.Question)
+	messages := []*base.MessageInput{&mi}
+	util.SSEHeader(ctx)
+	wg := sync.WaitGroup{}
+	wg.Add(len(models))
+
+	for _, amodel := range models {
+		util.AsyncGoWithDefault(ctx, func() {
+			defer wg.Done()
+			stream := amodel.StreamChat(ctx, messages)
+			finalChunk := &model.QuestionAnalyseStreamChunk{}
+			ctx.Stream(func(w io.Writer) bool {
+				for stream.Next() {
+					chunk := stream.Current()
+					xlog.Infof("data: %v", chunk)
+					sc := &model.QuestionAnalyseStreamChunk{
+						StreamMessage: model.StreamMessage{
+							Reasoning: chunk.ReasoningContent,
+							Content:   chunk.Content,
+						},
+					}
+					ctx.SSEvent("data", util.JsonString(sc))
+					finalChunk.Content += sc.Content
+					finalChunk.Reasoning += sc.Reasoning
+					return true
+				}
+				if stream.Err() != nil {
+					finalChunk.Content = ""
+					finalChunk.Reasoning = ""
+					finalChunk.Exception = stream.Err().Error()
+				}
+				finalChunk.Endflag = true
+				ctx.SSEvent("data", util.JsonString(finalChunk))
+				return false
+			})
+		})
+	}
 }

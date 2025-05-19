@@ -12,5 +12,14 @@ func questionAnalyse(ctx *gin.Context) {
 		JSONE(ctx, nil, err, req)
 		return
 	}
-	agents.Teacher().QuestionAnalyse(ctx, &req)
+	agents.TeacherService.QuestionAnalyse(ctx, &req)
+}
+
+func qaAll(ctx *gin.Context) {
+	var req model.QARequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		JSONE(ctx, nil, err, req)
+		return
+	}
+	agents.TeacherService.AnswerQuestion(ctx, &req)
 }

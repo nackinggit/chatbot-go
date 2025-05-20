@@ -79,6 +79,7 @@ func Teacher() *teacher {
 }
 
 func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.ImageAnalyseRequest) {
+	util.SSEHeader(ctx)
 	mi := base.MessageInput{
 		Role: base.USER,
 		MultiModelContents: []base.InputContent{
@@ -106,33 +107,6 @@ func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.ImageAnalyseReque
 			}
 		},
 	})
-	// util.SSEHeader(ctx)
-
-	// finalChunk := &model.QuestionAnalyseStreamChunk{}
-	// ctx.Stream(func(w io.Writer) bool {
-	// 	for stream.Next() {
-	// 		chunk := stream.Current()
-	// 		xlog.Debugf("data: %v", chunk)
-	// 		sc := &model.QuestionAnalyseStreamChunk{
-	// 			StreamMessage: model.StreamMessage{
-	// 				Reasoning: chunk.ReasoningContent,
-	// 				Content:   chunk.Content,
-	// 			},
-	// 		}
-	// 		ctx.SSEvent("data", util.JsonString(sc))
-	// 		finalChunk.Content += sc.Content
-	// 		finalChunk.Reasoning += sc.Reasoning
-	// 		return true
-	// 	}
-	// 	if stream.Err() != nil {
-	// 		finalChunk.Content = ""
-	// 		finalChunk.Reasoning = ""
-	// 		finalChunk.Exception = stream.Err().Error()
-	// 	}
-	// 	finalChunk.Endflag = true
-	// 	ctx.SSEvent("data", util.JsonString(finalChunk))
-	// 	return false
-	// })
 }
 
 func (t *teacher) AnswerQuestion(ctx *gin.Context, req *model.QARequest) {
@@ -162,45 +136,35 @@ func (t *teacher) AnswerQuestion(ctx *gin.Context, req *model.QARequest) {
 	util.SSEHeader(ctx)
 	wg := sync.WaitGroup{}
 	wg.Add(len(models))
-	someMapMutex := sync.RWMutex{}
+	lock := sync.RWMutex{}
 	finalChunks := []*model.QAStreamChunk{}
 	for _, amodel := range models {
 		util.AsyncGoWithDefault(ctx, func() {
 			defer wg.Done()
 			stream := amodel.StreamChat(ctx, messages)
-			finalChunk := &model.QAStreamChunk{
-				Name:          &amodel.Cfg.Name,
-				Model:         &amodel.Cfg.Model,
-				StreamMessage: &model.StreamMessage{},
-			}
-			for stream.Next() {
-				someMapMutex.Lock()
-				chunk := stream.Current()
-				sc := &model.QAStreamChunk{
-					StreamMessage: &model.StreamMessage{
-						Reasoning: chunk.ReasoningContent,
-						Content:   chunk.Content,
-					},
-					Name:  &amodel.Cfg.Name,
-					Model: &amodel.Cfg.Model,
-				}
-				xlog.Debugf("data: %v", util.JsonString(sc))
-				ctx.SSEvent("data", util.JsonString(sc))
-				finalChunk.Content += sc.Content
-				finalChunk.Reasoning += sc.Reasoning
-				someMapMutex.Unlock()
-
-			}
-			someMapMutex.Lock()
-			if stream.Err() != nil {
-				finalChunk.Content = ""
-				finalChunk.Reasoning = ""
-				finalChunk.Exception = stream.Err().Error()
-			}
-			finalChunk.Endflag = true
-			finalChunks = append(finalChunks, finalChunk)
-			ctx.SSEvent("data", util.JsonString(finalChunk))
-			someMapMutex.Unlock()
+			sseResponse(ctx, &sseStream[model.QAStreamChunk]{
+				stream: stream,
+				lock:   &lock,
+				dataHandler: func(output *base.OutputChunk, err error) model.QAStreamChunk {
+					chunk := model.QAStreamChunk{
+						StreamMessage: &model.StreamMessage{},
+						Model:         &amodel.Cfg.Model,
+						Name:          &amodel.Cfg.Name,
+					}
+					if err != nil {
+						chunk.Exception = err.Error()
+						chunk.Endflag = true
+					} else if output != nil {
+						chunk.Reasoning = output.ReasoningContent
+						chunk.Content = output.Content
+						chunk.Endflag = output.IsLastChunk
+						if output.IsLastChunk {
+							finalChunks = append(finalChunks, &chunk)
+						}
+					}
+					return chunk
+				},
+			})
 		})
 	}
 	wg.Wait()
@@ -225,30 +189,22 @@ func (t *teacher) JudgeAnswer(ctx *gin.Context, req *model.JudgeAnswerRequest) {
 	stream := t.judgeModel.StreamChat(ctx, messages)
 
 	util.SSEHeader(ctx)
-
-	finalChunk := &model.QuestionAnalyseStreamChunk{}
-	ctx.Stream(func(w io.Writer) bool {
-		for stream.Next() {
-			chunk := stream.Current()
-			xlog.Debugf("data: %v", chunk)
-			sc := &model.QuestionAnalyseStreamChunk{
-				StreamMessage: model.StreamMessage{
-					Reasoning: chunk.ReasoningContent,
-					Content:   chunk.Content,
-				},
+	sseResponse(ctx, &sseStream[model.StreamMessage]{
+		stream: stream,
+		dataHandler: func(output *base.OutputChunk, err error) model.StreamMessage {
+			streamMessage := model.StreamMessage{}
+			if err != nil {
+				streamMessage.Exception = err.Error()
+				streamMessage.Endflag = true
+			} else if output != nil {
+				streamMessage.Endflag = output.IsLastChunk
+				streamMessage.Content = output.Content
+				streamMessage.Reasoning = output.ReasoningContent
+			} else {
+				streamMessage.Endflag = true
+				streamMessage.Exception = "未知错误"
 			}
-			ctx.SSEvent("data", util.JsonString(sc))
-			finalChunk.Content += sc.Content
-			finalChunk.Reasoning += sc.Reasoning
-			return true
-		}
-		if stream.Err() != nil {
-			finalChunk.Content = ""
-			finalChunk.Reasoning = ""
-			finalChunk.Exception = stream.Err().Error()
-		}
-		finalChunk.Endflag = true
-		ctx.SSEvent("data", util.JsonString(finalChunk))
-		return false
+			return streamMessage
+		},
 	})
 }

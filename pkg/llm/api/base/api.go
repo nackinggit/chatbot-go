@@ -31,7 +31,7 @@ type OutputChunk struct {
 	Content          string      `json:"content"`
 	Role             MessageRole `json:"role"`
 	RawJSON          string      `json:"rawJson"`
-	IsLastChunk      bool        `json:"-"`
+	IsLastChunk      bool        `json:"isLastChunk"`
 }
 
 func (o *OutputChunk) HumanText() string {

@@ -1,6 +1,7 @@
 package agents
 
 import (
+	"io"
 	"sync"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
@@ -43,32 +44,34 @@ func sseResponse[T any](ctx *gin.Context, sseStream *sseStream[T]) {
 	stream := sseStream.stream
 	dataHandler := sseStream.dataHandler
 
-	doWrite := func(t T) {
+	doWrite := func(t T) bool {
 		if sseStream.lock != nil {
 			sseStream.lock.Lock()
 		}
-		ctx.SSEvent("data", util.JsonString(t))
-		ctx.Writer.Flush()
+		clientGone := ctx.Stream(func(w io.Writer) bool {
+			ctx.SSEvent("data", util.JsonString(t))
+			return false
+		})
 		if sseStream.lock != nil {
 			sseStream.lock.Unlock()
 		}
+		return clientGone
 	}
-
-	ctx.Writer.Header().Set("Content-Type", "text/event-stream")
-	ctx.Writer.Header().Set("Cache-Control", "no-cache")
-	ctx.Writer.Header().Set("Connection", "keep-alive")
-	ctx.Writer.Header().Set("Transfer-Encoding", "chunked")
 
 	for stream.Next() {
 		output := stream.Current()
 		t := dataHandler(&output, nil)
 		xlog.Infof("data: %v", util.JsonString(t))
-		doWrite(t)
+		if doWrite(t) {
+			return
+		}
 	}
 
 	if stream.Err() != nil {
 		t := dataHandler(nil, stream.Err())
-		doWrite(t)
+		if doWrite(t) {
+			return
+		}
 	}
 	ctx.Writer.Flush()
 }

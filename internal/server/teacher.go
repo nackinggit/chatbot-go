@@ -12,6 +12,10 @@ func questionAnalyse(ctx *gin.Context) {
 		JSONE(ctx, err, req)
 		return
 	}
+	ctx.Writer.Header().Set("Content-Type", "text/event-stream")
+	ctx.Writer.Header().Set("Cache-Control", "no-cache")
+	ctx.Writer.Header().Set("Connection", "keep-alive")
+	ctx.Writer.Header().Set("Transfer-Encoding", "chunked")
 	agents.TeacherService.QuestionAnalyse(ctx, &req)
 }
 

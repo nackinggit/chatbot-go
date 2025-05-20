@@ -16,6 +16,7 @@ type QARequest struct {
 type QAStreamChunk struct {
 	*StreamMessage
 	Name       *string          `json:"name,omitempty"`       // 模型名称
+	Model      *string          `json:"model,omitempty"`      // 模型
 	AllAnswers []*QAStreamChunk `json:"allAnswers,omitempty"` // 多个模型返回的答案
 	AllEndflag bool             `json:"allEndflag,omitempty"` // 多个模型返回的结束标志
 }

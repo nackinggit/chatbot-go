@@ -151,6 +151,7 @@ func (t *teacher) AnswerQuestion(ctx *gin.Context, req *model.QARequest) {
 			stream := amodel.StreamChat(ctx, messages)
 			finalChunk := &model.QAStreamChunk{
 				Name:          &amodel.Cfg.Name,
+				Model:         &amodel.Cfg.Model,
 				StreamMessage: &model.StreamMessage{},
 			}
 			for stream.Next() {
@@ -161,7 +162,8 @@ func (t *teacher) AnswerQuestion(ctx *gin.Context, req *model.QARequest) {
 						Reasoning: chunk.ReasoningContent,
 						Content:   chunk.Content,
 					},
-					Name: &amodel.Cfg.Name,
+					Name:  &amodel.Cfg.Name,
+					Model: &amodel.Cfg.Model,
 				}
 				xlog.Debugf("data: %v", util.JsonString(sc))
 				ctx.SSEvent("data", util.JsonString(sc))

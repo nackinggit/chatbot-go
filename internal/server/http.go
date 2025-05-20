@@ -19,17 +19,18 @@ func Route(e *gin.Engine) {
 		botv1.POST("/question_pic_analyse", questionAnalyse)
 		botv1.POST("/qa_all", qaAll)
 		botv1.POST("/qa_judge", judgeAnswer)
+		botv1.POST("/manghe_pic_analyse", manghePicAnalyse)
 	}
 
 }
 
-func JSONE[T any](ctx *gin.Context, obj any, err error, req T) {
+func JSONE[T any](ctx *gin.Context, err error, req T) {
 	if berr, ok := err.(bcode.BError); ok {
-		ctx.JSON(200, gin.H{"data": obj, "code": berr.Code(), "message": berr.Message()})
+		ctx.JSON(200, gin.H{"code": berr.Code(), "message": berr.Message()})
 	} else if ve, ok := err.(validator.ValidationErrors); ok {
-		ctx.JSON(400, gin.H{"data": obj, "code": 400, "message": validatorErr(ve, req)})
+		ctx.JSON(400, gin.H{"code": 400, "message": validatorErr(ve, req)})
 	} else {
-		ctx.JSON(200, gin.H{"data": obj, "code": 500, "message": err.Error()})
+		ctx.JSON(200, gin.H{"code": 500, "message": err.Error()})
 	}
 }
 

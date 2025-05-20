@@ -135,14 +135,18 @@ func (stream *OpenaiCompatiableMessageStream) Stream() *ssestream.Stream[OutputC
 }
 
 type openaiDecoder struct {
-	ostream *ssestream.Stream[openai.ChatCompletionChunk]
-	evt     ssestream.Event
-	err     error
+	ostream        *ssestream.Stream[openai.ChatCompletionChunk]
+	evt            ssestream.Event
+	err            error
+	completedChunk *OutputChunk
 }
 
 func (s *openaiDecoder) Next() bool {
 	data := bytes.NewBuffer(nil)
 	if s.ostream.Next() {
+		if s.completedChunk == nil {
+			s.completedChunk = &OutputChunk{IsLastChunk: true}
+		}
 		cur := s.ostream.Current()
 		delta := cur.Choices[0].Delta
 		var output OutputChunk
@@ -153,9 +157,20 @@ func (s *openaiDecoder) Next() bool {
 		s.evt = ssestream.Event{
 			Data: data.Bytes(),
 		}
+		s.completedChunk.Content += output.Content
+		s.completedChunk.ReasoningContent += output.ReasoningContent
+		s.completedChunk.Role = output.Role
 		return true
 	}
-
+	if s.completedChunk != nil {
+		value, _ := util.Marshal(s.completedChunk)
+		_, s.err = data.Write(value)
+		s.evt = ssestream.Event{
+			Data: data.Bytes(),
+		}
+		s.completedChunk = nil
+		return true
+	}
 	if s.ostream.Err() != nil {
 		s.err = s.ostream.Err()
 	}

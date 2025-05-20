@@ -1,6 +1,6 @@
 package model
 
-type QuestionAnalyseRequest struct {
+type ImageAnalyseRequest struct {
 	ImageUrl string `json:"imgUrl" binding:"required" err:"imageUrl is required"` // 图片url
 }
 

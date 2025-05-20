@@ -3,6 +3,7 @@ package agents
 import (
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/service"
+	"github.com/gin-gonic/gin"
 )
 
 var MangHeService *manghe
@@ -41,6 +42,6 @@ func init() {
 	service.Register(&teacher{})
 }
 
-func MangHe() *manghe {
-	return service.Service[manghe]("chatroom")
+func (m *manghe) ImageAnalyse(ctx *gin.Context, imgUrl string) {
+
 }

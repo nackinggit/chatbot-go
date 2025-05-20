@@ -7,9 +7,9 @@ import (
 )
 
 func questionAnalyse(ctx *gin.Context) {
-	var req model.QuestionAnalyseRequest
+	var req model.ImageAnalyseRequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		JSONE(ctx, nil, err, req)
+		JSONE(ctx, err, req)
 		return
 	}
 	agents.TeacherService.QuestionAnalyse(ctx, &req)
@@ -18,7 +18,7 @@ func questionAnalyse(ctx *gin.Context) {
 func qaAll(ctx *gin.Context) {
 	var req model.QARequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		JSONE(ctx, nil, err, req)
+		JSONE(ctx, err, req)
 		return
 	}
 	agents.TeacherService.AnswerQuestion(ctx, &req)
@@ -27,7 +27,7 @@ func qaAll(ctx *gin.Context) {
 func judgeAnswer(ctx *gin.Context) {
 	var req model.JudgeAnswerRequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		JSONE(ctx, nil, err, req)
+		JSONE(ctx, err, req)
 	}
 	agents.TeacherService.JudgeAnswer(ctx, &req)
 }

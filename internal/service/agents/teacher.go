@@ -78,7 +78,7 @@ func Teacher() *teacher {
 	return service.Service[teacher]("teacher")
 }
 
-func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.QuestionAnalyseRequest) {
+func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.ImageAnalyseRequest) {
 	mi := base.MessageInput{
 		Role: base.USER,
 		MultiModelContents: []base.InputContent{
@@ -87,33 +87,52 @@ func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.QuestionAnalyseRe
 	}
 	messages := []*base.MessageInput{&mi}
 	stream := t.questionAnalyserModel.StreamChat(ctx, messages)
-	util.SSEHeader(ctx)
-
-	finalChunk := &model.QuestionAnalyseStreamChunk{}
-	ctx.Stream(func(w io.Writer) bool {
-		for stream.Next() {
-			chunk := stream.Current()
-			xlog.Debugf("data: %v", chunk)
-			sc := &model.QuestionAnalyseStreamChunk{
-				StreamMessage: model.StreamMessage{
-					Reasoning: chunk.ReasoningContent,
-					Content:   chunk.Content,
-				},
+	sseResponse(ctx, &sseStream[model.QuestionAnalyseStreamChunk]{
+		stream: stream,
+		dataHandler: func(output *base.OutputChunk, err error) model.QuestionAnalyseStreamChunk {
+			if err != nil {
+				xlog.Warnf("QuestionAnalyse error: %v", err)
+				return model.QuestionAnalyseStreamChunk{
+					StreamMessage: model.StreamMessage{Exception: err.Error(), Endflag: true},
+				}
 			}
-			ctx.SSEvent("data", util.JsonString(sc))
-			finalChunk.Content += sc.Content
-			finalChunk.Reasoning += sc.Reasoning
-			return true
-		}
-		if stream.Err() != nil {
-			finalChunk.Content = ""
-			finalChunk.Reasoning = ""
-			finalChunk.Exception = stream.Err().Error()
-		}
-		finalChunk.Endflag = true
-		ctx.SSEvent("data", util.JsonString(finalChunk))
-		return false
+			if output != nil {
+				return model.QuestionAnalyseStreamChunk{
+					StreamMessage: model.StreamMessage{Reasoning: output.ReasoningContent, Content: output.Content, Endflag: output.IsLastChunk},
+				}
+			}
+			return model.QuestionAnalyseStreamChunk{
+				StreamMessage: model.StreamMessage{Exception: "未知错误", Endflag: true},
+			}
+		},
 	})
+	// util.SSEHeader(ctx)
+
+	// finalChunk := &model.QuestionAnalyseStreamChunk{}
+	// ctx.Stream(func(w io.Writer) bool {
+	// 	for stream.Next() {
+	// 		chunk := stream.Current()
+	// 		xlog.Debugf("data: %v", chunk)
+	// 		sc := &model.QuestionAnalyseStreamChunk{
+	// 			StreamMessage: model.StreamMessage{
+	// 				Reasoning: chunk.ReasoningContent,
+	// 				Content:   chunk.Content,
+	// 			},
+	// 		}
+	// 		ctx.SSEvent("data", util.JsonString(sc))
+	// 		finalChunk.Content += sc.Content
+	// 		finalChunk.Reasoning += sc.Reasoning
+	// 		return true
+	// 	}
+	// 	if stream.Err() != nil {
+	// 		finalChunk.Content = ""
+	// 		finalChunk.Reasoning = ""
+	// 		finalChunk.Exception = stream.Err().Error()
+	// 	}
+	// 	finalChunk.Endflag = true
+	// 	ctx.SSEvent("data", util.JsonString(finalChunk))
+	// 	return false
+	// })
 }
 
 func (t *teacher) AnswerQuestion(ctx *gin.Context, req *model.QARequest) {

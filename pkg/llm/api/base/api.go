@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"com.imilair/chatbot/bootstrap/config"
+	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/pkg/util"
 	"github.com/openai/openai-go/packages/ssestream"
 )
 
@@ -29,6 +31,7 @@ type OutputChunk struct {
 	Content          string      `json:"content"`
 	Role             MessageRole `json:"role"`
 	RawJSON          string      `json:"rawJson"`
+	IsLastChunk      bool        `json:"-"`
 }
 
 func (o *OutputChunk) HumanText() string {
@@ -53,5 +56,8 @@ func (m *LLMModel) Chat(ctx context.Context, messages []*MessageInput) (Output, 
 }
 
 func (m *LLMModel) StreamChat(ctx context.Context, messages []*MessageInput) *ssestream.Stream[OutputChunk] {
-	return m.Api.StreamChat(ctx, m.Model, messages)
+	xlog.Debugf("model: %v, start streamchat: %v", m.Model, util.JsonString(messages))
+	stream := m.Api.StreamChat(ctx, m.Model, messages)
+	xlog.Debugf("model: %v, end streamchat", m.Model)
+	return stream
 }

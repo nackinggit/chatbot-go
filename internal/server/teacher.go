@@ -23,3 +23,11 @@ func qaAll(ctx *gin.Context) {
 	}
 	agents.TeacherService.AnswerQuestion(ctx, &req)
 }
+
+func judgeAnswer(ctx *gin.Context) {
+	var req model.JudgeAnswerRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		JSONE(ctx, nil, err, req)
+	}
+	agents.TeacherService.JudgeAnswer(ctx, &req)
+}

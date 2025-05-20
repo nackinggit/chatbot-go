@@ -130,7 +130,7 @@ func initConfig() error {
 	if Config.Logger != nil && Config.Logger.LogFilename == "" {
 		Config.Logger.LogFilename = Config.App.Name
 	}
-	xlog.Infof("application config : %v", util.JsonString(Config))
+	xlog.Infof("application config : %v", util.BeautifulJson(Config))
 	return nil
 }
 

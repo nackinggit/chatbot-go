@@ -14,7 +14,7 @@ var apis = map[string]base.LLMApi{}
 var register = map[string]base.InitApi{}
 
 func Init(cfgs []*config.LLMConfig) error {
-	xlog.Infof("init llm %s", util.JsonString(cfgs))
+	xlog.Infof("init llm %s", util.BeautifulJson(cfgs))
 	for _, cfg := range cfgs {
 		var initApi base.InitApi
 		if cfg.OpenaiCompatiable {

@@ -25,7 +25,7 @@ func (o *Output) Trim() {
 }
 
 type OutputChunk struct {
-	ReasoningContent string      `json:"reasoning"`
+	ReasoningContent string      `json:"reasoning_content"`
 	Content          string      `json:"content"`
 	Role             MessageRole `json:"role"`
 	RawJSON          string      `json:"rawJson"`

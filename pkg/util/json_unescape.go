@@ -30,6 +30,19 @@ func JsonString(d any) string {
 	return string(data)
 }
 
+func BeautifulJson(d any) string {
+	data, err := Marshal(d)
+	if err != nil {
+		return ""
+	}
+
+	var buf bytes.Buffer
+	json.Indent(&buf, data, "", "  ")
+	data = buf.Bytes()
+
+	return string(data)
+}
+
 func Unmarshal(src []byte, dst any) error {
 	return json.Unmarshal(src, dst)
 }

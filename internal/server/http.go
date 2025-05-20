@@ -20,6 +20,7 @@ func Route(e *gin.Engine) {
 		botv1.POST("/qa_all", qaAll)
 		botv1.POST("/qa_judge", judgeAnswer)
 		botv1.POST("/manghe_pic_analyse", manghePicAnalyse)
+		botv1.POST("/manghe_predict", manghePredict)
 	}
 
 }

@@ -14,3 +14,12 @@ func manghePicAnalyse(ctx *gin.Context) {
 	}
 	agents.MangHeService.ImageAnalyse(ctx, req.ImageUrl)
 }
+
+func manghePredict(ctx *gin.Context) {
+	var req model.MangHePredictRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		JSONE(ctx, err, req)
+		return
+	}
+	agents.MangHeService.Predict(ctx, &req)
+}

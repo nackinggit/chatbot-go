@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service/config"
 	"com.imilair/chatbot/pkg/llm"
 	"com.imilair/chatbot/pkg/llm/api/base"
@@ -74,4 +75,17 @@ func sseResponse[T any](ctx *gin.Context, sseStream *sseStream[T]) {
 		}
 	}
 	ctx.Writer.Flush()
+}
+
+func streamMessageHandlerfunc(output *base.OutputChunk, err error) model.StreamMessage {
+	sm := model.StreamMessage{}
+	if err != nil {
+		sm.Exception = err.Error()
+		sm.Endflag = true
+	} else {
+		sm.Content = output.Content
+		sm.Reasoning = output.ReasoningContent
+		sm.Endflag = output.IsLastChunk
+	}
+	return sm
 }

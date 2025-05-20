@@ -2,7 +2,10 @@ package agents
 
 import (
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service"
+	"com.imilair/chatbot/pkg/llm/api/base"
+	"com.imilair/chatbot/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -43,5 +46,33 @@ func init() {
 }
 
 func (m *manghe) ImageAnalyse(ctx *gin.Context, imgUrl string) {
+	messages := []*base.MessageInput{
+		{
+			Role: base.USER,
+			MultiModelContents: []base.InputContent{
+				{
+					Type:    base.Image,
+					Content: imgUrl,
+				},
+			},
+		},
+	}
+	stream := m.imageAnalyseModel.StreamChat(ctx, messages)
+	util.SSEHeader(ctx)
+	sseResponse(ctx, &sseStream[model.StreamMessage]{
+		stream:      stream,
+		dataHandler: streamMessageHandlerfunc,
+	})
+}
 
+func (m *manghe) Predict(ctx *gin.Context, req *model.MangHePredictRequest) {
+	ms := []*base.MessageInput{
+		base.UserStringMessage(req.ToString()),
+	}
+	stream := m.predictModel.StreamChat(ctx, ms)
+	util.SSEHeader(ctx)
+	sseResponse(ctx, &sseStream[model.StreamMessage]{
+		stream:      stream,
+		dataHandler: streamMessageHandlerfunc,
+	})
 }

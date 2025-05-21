@@ -93,10 +93,15 @@ func (a *assistant) ComicTranslate(ctx *gin.Context, req *model.ImageRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	var resp model.ComicTranslateResponse
+	// var resp model.ComicTranslateResponse
+	var resp struct {
+		Code    int                           `json:"code"`
+		Message string                        `json:"msg"`
+		Data    *model.ComicTranslateResponse `json:"data"`
+	}
 	err = xhttp.DoAndBind(request, &resp)
 	if err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return resp.Data, nil
 }

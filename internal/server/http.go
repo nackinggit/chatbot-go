@@ -15,6 +15,10 @@ import (
 
 func Route(e *gin.Engine) {
 	apiV1 := e.Group("/api")
+	{
+		apiV1.POST("/user_action/callback", userActionCallback)
+	}
+
 	botv1 := apiV1.Group("/bot")
 	{
 		botv1.POST("/question_pic_analyse", questionAnalyse)

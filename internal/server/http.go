@@ -22,6 +22,10 @@ func Route(e *gin.Engine) {
 		botv1.POST("/manghe_pic_analyse", manghePicAnalyse)
 		botv1.POST("/manghe_predict", manghePredict)
 	}
+	chatroomv1 := apiV1.Group("/chat_room")
+	{
+		chatroomv1.POST("/recommend", inputRecommend)
+	}
 
 }
 

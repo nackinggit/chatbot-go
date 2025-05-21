@@ -79,7 +79,6 @@ func Teacher() *teacher {
 }
 
 func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.ImageAnalyseRequest) {
-	util.SSEHeader(ctx)
 	mi := base.MessageInput{
 		Role: base.USER,
 		MultiModelContents: []base.InputContent{
@@ -88,24 +87,9 @@ func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.ImageAnalyseReque
 	}
 	messages := []*base.MessageInput{&mi}
 	stream := t.questionAnalyserModel.StreamChat(ctx, messages)
-	sseResponse(ctx, &sseStream[model.QuestionAnalyseStreamChunk]{
-		stream: stream,
-		dataHandler: func(output *base.OutputChunk, err error) model.QuestionAnalyseStreamChunk {
-			if err != nil {
-				xlog.Warnf("QuestionAnalyse error: %v", err)
-				return model.QuestionAnalyseStreamChunk{
-					StreamMessage: model.StreamMessage{Exception: err.Error(), Endflag: true},
-				}
-			}
-			if output != nil {
-				return model.QuestionAnalyseStreamChunk{
-					StreamMessage: model.StreamMessage{Reasoning: output.ReasoningContent, Content: output.Content, Endflag: output.IsLastChunk},
-				}
-			}
-			return model.QuestionAnalyseStreamChunk{
-				StreamMessage: model.StreamMessage{Exception: "未知错误", Endflag: true},
-			}
-		},
+	sseResponse(ctx, &sseStream[model.StreamMessage]{
+		stream:      stream,
+		dataHandler: streamMessageHandlerfunc,
 	})
 }
 
@@ -133,7 +117,6 @@ func (t *teacher) AnswerQuestion(ctx *gin.Context, req *model.QARequest) {
 	}
 	mi := base.UserStringMessage(req.Question)
 	messages := []*base.MessageInput{mi}
-	util.SSEHeader(ctx)
 	wg := sync.WaitGroup{}
 	wg.Add(len(models))
 	lock := sync.RWMutex{}
@@ -187,24 +170,8 @@ func (t *teacher) JudgeAnswer(ctx *gin.Context, req *model.JudgeAnswerRequest) {
 	contentDict := map[string]any{"原题": req.Question, "答案": map[string]any{"答案信息": ancontents}}
 	messages := []*base.MessageInput{base.UserStringMessage(util.BeautifulJson(contentDict))}
 	stream := t.judgeModel.StreamChat(ctx, messages)
-
-	util.SSEHeader(ctx)
 	sseResponse(ctx, &sseStream[model.StreamMessage]{
-		stream: stream,
-		dataHandler: func(output *base.OutputChunk, err error) model.StreamMessage {
-			streamMessage := model.StreamMessage{}
-			if err != nil {
-				streamMessage.Exception = err.Error()
-				streamMessage.Endflag = true
-			} else if output != nil {
-				streamMessage.Endflag = output.IsLastChunk
-				streamMessage.Content = output.Content
-				streamMessage.Reasoning = output.ReasoningContent
-			} else {
-				streamMessage.Endflag = true
-				streamMessage.Exception = "未知错误"
-			}
-			return streamMessage
-		},
+		stream:      stream,
+		dataHandler: streamMessageHandlerfunc,
 	})
 }

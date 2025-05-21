@@ -9,10 +9,6 @@ type ImageAnalyseRequest struct {
 	ImageUrl string `json:"imgUrl" binding:"required" err:"imageUrl is required"` // 图片url
 }
 
-type QuestionAnalyseStreamChunk struct {
-	StreamMessage
-}
-
 type QARequest struct {
 	Question string   `json:"question" binding:"required" err:"question is required"` // 题目
 	Models   []string `json:"modelNames"`                                             // 模型名称

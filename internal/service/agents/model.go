@@ -37,14 +37,23 @@ func initModel(cfg *config.BotConfig) (*AgentModel, error) {
 type sseStream[T any] struct {
 	lock *sync.RWMutex
 
-	stream      *ssestream.Stream[base.OutputChunk]
-	dataHandler func(output *base.OutputChunk, err error) T
+	sseHeaderAdded bool
+	stream         *ssestream.Stream[base.OutputChunk]
+	dataHandler    func(output *base.OutputChunk, err error) T
 }
 
 func sseResponse[T any](ctx *gin.Context, sseStream *sseStream[T]) {
 	stream := sseStream.stream
 	dataHandler := sseStream.dataHandler
-
+	if !sseStream.sseHeaderAdded {
+		if sseStream.lock != nil {
+			sseStream.lock.Lock()
+		}
+		sseStream.sseHeaderAdded = util.SSEHeader(ctx)
+		if sseStream.lock != nil {
+			sseStream.lock.Unlock()
+		}
+	}
 	doWrite := func(t T) bool {
 		if sseStream.lock != nil {
 			sseStream.lock.Lock()

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/internal/bcode"
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service"
 	"com.imilair/chatbot/internal/service/config"
@@ -93,7 +94,7 @@ func (a *assistant) ComicTranslate(ctx *gin.Context, req *model.ImageRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	// var resp model.ComicTranslateResponse
+
 	var resp struct {
 		Code    int                           `json:"code"`
 		Message string                        `json:"msg"`
@@ -102,6 +103,9 @@ func (a *assistant) ComicTranslate(ctx *gin.Context, req *model.ImageRequest) (*
 	err = xhttp.DoAndBind(request, &resp)
 	if err != nil {
 		return nil, err
+	}
+	if resp.Data == nil {
+		return nil, bcode.New(500, "翻译失败")
 	}
 	return resp.Data, nil
 }

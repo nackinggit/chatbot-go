@@ -91,6 +91,7 @@ type ChatRoomUserInfo struct {
 }
 
 type UserContent struct {
+	Id           string `json:"id"`
 	Text         string `json:"text"`
 	VoteOptionId int    `json:"voteOptionId"`
 }

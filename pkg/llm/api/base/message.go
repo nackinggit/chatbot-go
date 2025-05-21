@@ -31,6 +31,27 @@ func UserStringMessage(content string) *MessageInput {
 	}
 }
 
+func UserMultiModalMessage(contents []InputContent) *MessageInput {
+	return &MessageInput{
+		MultiModelContents: contents,
+		Role:               USER,
+	}
+}
+
+func ImagePart(imageUrl string) InputContent {
+	return InputContent{
+		Type:    Image,
+		Content: imageUrl,
+	}
+}
+
+func TextPart(text string) InputContent {
+	return InputContent{
+		Type:    Text,
+		Content: text,
+	}
+}
+
 func (input *MessageInput) ToOpenaiMessage() (res openai.ChatCompletionMessageParamUnion, err error) {
 	role := input.Role
 	if role == USER {

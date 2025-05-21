@@ -1,9 +1,10 @@
 package config
 
 type ServiceConfig struct {
-	Teacher  *TeacherConfig  `json:"teacher" yaml:"teacher" mapstructure:"teacher"`    // 解题助手配置
-	ChatRoom *ChatRoomConfig `json:"chatroom" yaml:"chatroom" mapstructure:"chatroom"` // 聊天室配置
-	MangHe   *MangHeConfig   `json:"manghe" yaml:"manghe" mapstructure:"manghe"`       // 盲盒配置
+	Teacher   *TeacherConfig   `json:"teacher" yaml:"teacher" mapstructure:"teacher"`       // 解题助手配置
+	ChatRoom  *ChatRoomConfig  `json:"chatroom" yaml:"chatroom" mapstructure:"chatroom"`    // 聊天室配置
+	MangHe    *MangHeConfig    `json:"manghe" yaml:"manghe" mapstructure:"manghe"`          // 盲盒配置
+	Assistant *AssistantConfig `json:"assistant" yaml:"assistant" mapstructure:"assistant"` // IM助手配置
 }
 
 type BotConfig struct {

@@ -9,7 +9,7 @@ import (
 func manghePicAnalyse(ctx *gin.Context) {
 	var req model.ImageAnalyseRequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		JSONE(ctx, err, req)
+		JSONE(ctx, err, &req)
 		return
 	}
 	agents.MangHeService.ImageAnalyse(ctx, req.ImageUrl)
@@ -18,7 +18,7 @@ func manghePicAnalyse(ctx *gin.Context) {
 func manghePredict(ctx *gin.Context) {
 	var req model.MangHePredictRequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		JSONE(ctx, err, req)
+		JSONE(ctx, err, &req)
 		return
 	}
 	agents.MangHeService.Predict(ctx, &req)

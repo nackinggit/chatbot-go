@@ -21,18 +21,27 @@ func Route(e *gin.Engine) {
 		botv1.POST("/qa_judge", judgeAnswer)
 		botv1.POST("/manghe_pic_analyse", manghePicAnalyse)
 		botv1.POST("/manghe_predict", manghePredict)
+		botv1.POST("/extract_name", extractName)
+		botv1.POST("/comment_pic", commentPic)
+		botv1.POST("/comment_post", commentPost)
 	}
 	chatroomv1 := apiV1.Group("/chat_room")
 	{
 		chatroomv1.POST("/recommend", inputRecommend)
 	}
-
 }
 
-func JSONE[T any](ctx *gin.Context, err error, req T) {
+func JSONR[T any](ctx *gin.Context, data *T, err error) {
+	if err != nil {
+		JSONE(ctx, err, data)
+	}
+	ctx.JSON(200, gin.H{"code": 0, "message": "", "data": data})
+}
+
+func JSONE[T any](ctx *gin.Context, err error, req *T) {
 	if berr, ok := err.(bcode.BError); ok {
 		ctx.JSON(200, gin.H{"code": berr.Code(), "message": berr.Message()})
-	} else if ve, ok := err.(validator.ValidationErrors); ok {
+	} else if ve, ok := err.(validator.ValidationErrors); ok && req != nil {
 		ctx.JSON(400, gin.H{"code": 400, "message": validatorErr(ve, req)})
 	} else {
 		ctx.JSON(200, gin.H{"code": 500, "message": err.Error()})

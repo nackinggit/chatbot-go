@@ -11,7 +11,7 @@ import (
 func inputRecommend(ctx *gin.Context) {
 	var req model.InputRecommendRequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		JSONE(ctx, err, req)
+		JSONE(ctx, err, &req)
 	}
 	req.CreateTime = time.Now().UnixMilli()
 	agents.ChatRoomService.InputRecommend(ctx, &req)

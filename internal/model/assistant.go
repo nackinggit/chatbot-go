@@ -15,3 +15,8 @@ type CommentPicRequest struct {
 type CommentPicResponse struct {
 	Comment string `json:"content"`
 }
+
+type ComicTranslateResponse struct {
+	ImgBase64 string `json:"imgBase64"`
+	Format    string `json:"format"`
+}

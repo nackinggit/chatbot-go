@@ -7,7 +7,7 @@ import (
 )
 
 func questionAnalyse(ctx *gin.Context) {
-	var req model.ImageAnalyseRequest
+	var req model.ImageRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		JSONE(ctx, err, &req)
 		return

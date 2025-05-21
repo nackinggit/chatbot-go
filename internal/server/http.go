@@ -4,6 +4,7 @@ import (
 	"io"
 	"reflect"
 
+	"com.imilair/chatbot/bootstrap/gin/middlewares"
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/bcode"
 	"com.imilair/chatbot/pkg/util"
@@ -24,6 +25,7 @@ func Route(e *gin.Engine) {
 		botv1.POST("/extract_name", extractName)
 		botv1.POST("/comment_pic", commentPic)
 		botv1.POST("/comment_post", commentPost)
+		botv1.POST("/fanyi", middlewares.RateLimitHandler(), comicTranslate)
 	}
 	chatroomv1 := apiV1.Group("/chat_room")
 	{

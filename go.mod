@@ -17,6 +17,7 @@ require (
 	github.com/volcengine/volcengine-go-sdk v1.1.7
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.38.0
+	golang.org/x/time v0.8.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.7
 )

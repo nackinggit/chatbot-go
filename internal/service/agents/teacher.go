@@ -78,7 +78,7 @@ func Teacher() *teacher {
 	return service.Service[teacher]("teacher")
 }
 
-func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.ImageAnalyseRequest) {
+func (t *teacher) QuestionAnalyse(ctx *gin.Context, req *model.ImageRequest) {
 	mi := base.MessageInput{
 		Role: base.USER,
 		MultiModelContents: []base.InputContent{

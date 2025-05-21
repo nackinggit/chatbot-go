@@ -28,3 +28,13 @@ func commentPic(ctx *gin.Context) {
 
 func commentPost(ctx *gin.Context) {
 }
+
+func comicTranslate(ctx *gin.Context) {
+	var req model.ImageRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		JSONE(ctx, err, &req)
+		return
+	}
+	resp, err := agents.AssistantService.ComicTranslate(ctx, &req)
+	JSONR(ctx, resp, err)
+}

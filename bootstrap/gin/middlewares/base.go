@@ -3,12 +3,14 @@ package middlewares
 import (
 	"bytes"
 	"net"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"com.imilair/chatbot/bootstrap/config"
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"golang.org/x/time/rate"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -62,5 +64,17 @@ func LogHandler() gin.HandlerFunc {
 		ctx.Writer = blw
 		ctx.Next()
 		xlog.Infof("response: %v: %v, cost: %v", ctx.Request.URL.Path, ctx.Writer.Status(), time.Since(now))
+	}
+}
+
+var limiter = rate.NewLimiter(2, 5)
+
+func RateLimitHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if limiter.AllowN(time.Now().Add(2*time.Second), 1) {
+			ctx.Next()
+		} else {
+			ctx.AbortWithStatus(http.StatusTooManyRequests)
+		}
 	}
 }

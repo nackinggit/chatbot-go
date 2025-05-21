@@ -1,20 +1,25 @@
 package agents
 
 import (
+	"bytes"
 	"fmt"
+	"net/http"
 	"strings"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service"
+	"com.imilair/chatbot/internal/service/config"
 	"com.imilair/chatbot/pkg/llm/api/base"
 	"com.imilair/chatbot/pkg/util"
+	"com.imilair/chatbot/pkg/xhttp"
 	"github.com/gin-gonic/gin"
 )
 
 var AssistantService *assistant
 
 type assistant struct {
+	cfg          *config.AssistantConfig
 	extractName  *AgentModel
 	commentImage *AgentModel
 }
@@ -30,6 +35,7 @@ func (t *assistant) Init() (err error) {
 	if err != nil {
 		return err
 	}
+	t.cfg = cfg
 	t.extractName, err = initModel(cfg.ExtractName)
 	if err != nil {
 		return err
@@ -76,4 +82,21 @@ func (a *assistant) CommentPic(ctx *gin.Context, req *model.CommentPicRequest) (
 	return &model.CommentPicResponse{
 		Comment: output.Content,
 	}, nil
+}
+
+func (a *assistant) ComicTranslate(ctx *gin.Context, req *model.ImageRequest) (*model.ComicTranslateResponse, error) {
+	bs, err := util.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, a.cfg.ComicTranslate, bytes.NewBuffer(bs))
+	if err != nil {
+		return nil, err
+	}
+	var resp model.ComicTranslateResponse
+	err = xhttp.DoAndBind(request, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
 }

@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-type ImageAnalyseRequest struct {
-	ImageUrl string `json:"imgUrl" binding:"required" err:"imageUrl is required"` // 图片url
+type ImageRequest struct {
+	ImageUrl string `json:"imgUrl" binding:"required" err:"imgUrl is required"` // 图片url
 }
 
 type QARequest struct {

@@ -51,6 +51,10 @@ func ChatRoom() *chatroom {
 	return service.Service[chatroom]("chatroom")
 }
 
+func (t *chatroom) ReplySpeak() string {
+	return ""
+}
+
 func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendRequest) {
 	// content := req.GetContent()
 

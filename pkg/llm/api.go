@@ -34,7 +34,7 @@ func Init(cfgs []*config.LLMConfig) error {
 func GetApi(api string) (base.LLMApi, error) {
 	llmapi, ok := apis[api]
 	if !ok {
-		return nil, fmt.Errorf("api %s not found", api)
+		return nil, fmt.Errorf("llm api %s not found", api)
 	}
 	return llmapi, nil
 }

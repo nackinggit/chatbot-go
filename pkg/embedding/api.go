@@ -27,6 +27,9 @@ func Init(cfgs []*config.EmbeddingConfig) error {
 	return nil
 }
 
-func GetEmbeddingApi(api string) base.EmbeddingApi {
-	return apis[api]
+func GetEmbeddingApi(api string) (base.EmbeddingApi, error) {
+	if eapi, ok := apis[api]; ok {
+		return eapi, nil
+	}
+	return nil, fmt.Errorf("embedding api %s not found", api)
 }

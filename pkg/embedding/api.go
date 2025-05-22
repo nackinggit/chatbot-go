@@ -26,3 +26,7 @@ func Init(cfgs []*config.EmbeddingConfig) error {
 	}
 	return nil
 }
+
+func GetEmbeddingApi(api string) base.EmbeddingApi {
+	return apis[api]
+}

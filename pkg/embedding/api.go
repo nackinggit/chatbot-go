@@ -31,5 +31,5 @@ func GetEmbeddingApi(api string) (base.EmbeddingApi, error) {
 	if eapi, ok := apis[api]; ok {
 		return eapi, nil
 	}
-	return nil, fmt.Errorf("embedding api %s not found", api)
+	return nil, fmt.Errorf("embedding api `%s` not found", api)
 }

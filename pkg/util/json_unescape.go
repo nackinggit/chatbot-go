@@ -25,6 +25,7 @@ func Marshal(src any) ([]byte, error) {
 func JsonString(d any) string {
 	data, err := Marshal(d)
 	if err != nil {
+		xlog.Warnf("JsonString: %+v, err: %v", d, err)
 		return ""
 	}
 	return string(data)

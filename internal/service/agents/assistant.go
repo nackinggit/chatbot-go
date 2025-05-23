@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/bcode"
@@ -74,11 +75,17 @@ func (t *assistant) Init() (err error) {
 				return
 			default:
 				actions, _ := t.queue.Dequeue(context.Background(), 10)
-				for _, action := range actions {
-					fn := actionFuncs[action.ActionType]
-					if fn != nil {
-						fn(&action)
+				if len(actions) > 0 {
+					for _, action := range actions {
+						fn := actionFuncs[action.ActionType]
+						if fn != nil {
+							fn(&action)
+						} else {
+							xlog.Warnf("`%s` unknown action type: %d, ignore message: %s", t.Name(), action.ActionType, util.JsonString(action))
+						}
 					}
+				} else {
+					time.Sleep(100 * time.Millisecond)
 				}
 			}
 		}

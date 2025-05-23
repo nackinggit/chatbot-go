@@ -1,6 +1,8 @@
 package server
 
 import (
+	"time"
+
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service/agents"
 	"github.com/gin-gonic/gin"
@@ -17,11 +19,13 @@ func userActionCallback(ctx *gin.Context) {
 		if err != nil {
 			JSONE(ctx, err, &req)
 		} else {
+			chatRoom.CreateTime = time.Now().UnixMilli()
 			resp, err := agents.ChatRoomService.RoomActionCallback(ctx, chatRoom)
 			JSONR(ctx, resp, err)
 		}
 		return
+	} else {
+		resp, err := agents.AssistantService.UserActionCallback(ctx, &req)
+		JSONR(ctx, resp, err)
 	}
-	resp, err := agents.AssistantService.UserActionCallback(ctx, &req)
-	JSONR(ctx, resp, err)
 }

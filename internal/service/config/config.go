@@ -5,6 +5,7 @@ type ServiceConfig struct {
 	ChatRoom  *ChatRoomConfig  `json:"chatroom" yaml:"chatroom" mapstructure:"chatroom"`    // 聊天室配置
 	MangHe    *MangHeConfig    `json:"manghe" yaml:"manghe" mapstructure:"manghe"`          // 盲盒配置
 	Assistant *AssistantConfig `json:"assistant" yaml:"assistant" mapstructure:"assistant"` // IM助手配置
+	Dao       *DaoConfig       `json:"dao" yaml:"dao" mapstructure:"dao"`                   // 数据库配置
 }
 
 type BotConfig struct {

@@ -37,9 +37,9 @@ func Route(e *gin.Engine) {
 	}
 }
 
-func JSONR[T any](ctx *gin.Context, data *T, err error) {
+func JSONR(ctx *gin.Context, data any, err error) {
 	if err != nil {
-		JSONE(ctx, err, data)
+		JSONE[any](ctx, err, nil)
 	}
 	ctx.JSON(200, gin.H{"code": 0, "message": "", "data": data})
 }

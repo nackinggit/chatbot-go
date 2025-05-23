@@ -8,11 +8,11 @@ import (
 )
 
 func TestNewSnowflakeID(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		id := NewSnowflakeID()
 		time.Sleep(time.Millisecond)
-		snId := snowflake.ParseInt64(id)
-		t.Logf("%d -> snowflakeID:%d time:%d, node:%d, step:%d", i, id, snId.Time(), snId.Node(), snId.Step())
+		snId, _ := snowflake.ParseString(id)
+		t.Logf("%d -> snowflakeID:%s time:%d, node:%d, step:%d", i, id, snId.Time(), snId.Node(), snId.Step())
 	}
 }
 

@@ -51,6 +51,10 @@ func ChatRoom() *chatroom {
 	return service.Service[chatroom]("chatroom")
 }
 
+func (t *chatroom) RoomActionCallback(ctx *gin.Context, req *model.Room) (any, error) {
+	return nil, nil
+}
+
 func (t *chatroom) ReplySpeak() string {
 	return ""
 }

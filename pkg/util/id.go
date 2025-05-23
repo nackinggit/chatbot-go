@@ -35,6 +35,6 @@ func init() {
 	xlog.Infof("snowflake node created: %d/%d", hostIdx%nodesCount, nodesCount)
 }
 
-func NewSnowflakeID() int64 {
-	return node.Generate().Int64()
+func NewSnowflakeID() string {
+	return node.Generate().String()
 }

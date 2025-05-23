@@ -6,6 +6,8 @@ import (
 	"com.imilair/chatbot/pkg/util"
 )
 
+type HandleCallback func(useraction *UserAction)
+
 type ActionType string
 
 const (
@@ -20,6 +22,7 @@ const (
 	COMMENT       ActionType = "comment"
 	REPLY_COMMENT ActionType = "replyComment"
 	COMMENT_PIC   ActionType = "commentPic"
+	ROOM          ActionType = "room"
 )
 
 type UserAction struct {

@@ -2,6 +2,9 @@ package middlewares
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -10,11 +13,59 @@ import (
 
 	"com.imilair/chatbot/bootstrap/config"
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/pkg/util"
 	"golang.org/x/time/rate"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
+
+const (
+	bodyKey = "cbody"
+)
+
+func cacheBody(ctx *gin.Context) []byte {
+	vb, ok := ctx.Get(bodyKey)
+	if !ok {
+		if ctx.Request.Method == "POST" {
+			buf := &bytes.Buffer{}
+			tea := io.TeeReader(ctx.Request.Body, buf)
+			body, err := io.ReadAll(tea)
+			if err != nil {
+				xlog.Panicf("read body err: %+v", err)
+			}
+			ctx.Request.Body = io.NopCloser(buf)
+
+			ctx.Set(bodyKey, body)
+			return body
+		} else if ctx.Request.Method == "GET" {
+			resp := make(map[string]any)
+			query := ctx.Request.URL.Query()
+			for k, v := range query {
+				if len(v) == 1 {
+					resp[k] = v[0]
+				} else {
+					resp[k] = v
+				}
+			}
+			bs, _ := util.Marshal(resp)
+			ctx.Set(bodyKey, bs)
+			return bs
+		}
+	}
+	return vb.([]byte)
+}
+
+func setmid(ctx *gin.Context) {
+	bs := cacheBody(ctx)
+	hash := md5.Sum(bs)
+	ctx.Header("x-mid", hex.EncodeToString(hash[:]))
+	rid := ctx.GetHeader("X-Request-Id")
+	if rid == "" {
+		rid = util.NewSnowflakeID()
+		ctx.Header("X-Request-Id", rid)
+	}
+}
 
 func CORSWithConfig(cfg *config.CORSConfig) gin.HandlerFunc {
 	corsCfg := cors.Config{
@@ -59,6 +110,7 @@ func (w ResponseWriterWrapper) WriteString(s string) (int, error) {
 func LogHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		now := time.Now()
+		setmid(ctx)
 		xlog.Infof("request: %v", ctx.Request.URL.Path)
 		blw := &ResponseWriterWrapper{Body: bytes.NewBufferString(""), ResponseWriter: ctx.Writer}
 		ctx.Writer = blw
@@ -77,4 +129,8 @@ func RateLimitHandler() gin.HandlerFunc {
 			ctx.AbortWithStatus(http.StatusTooManyRequests)
 		}
 	}
+}
+
+func GetMid(ctx *gin.Context) string {
+	return ctx.GetHeader("X-Mid")
 }

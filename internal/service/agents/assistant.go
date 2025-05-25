@@ -17,6 +17,7 @@ import (
 	"com.imilair/chatbot/internal/service/config"
 	"com.imilair/chatbot/internal/service/dao"
 	"com.imilair/chatbot/internal/service/imapi"
+	"com.imilair/chatbot/internal/service/memory"
 	"com.imilair/chatbot/pkg/llm/api/base"
 	"com.imilair/chatbot/pkg/queue"
 	"com.imilair/chatbot/pkg/util"
@@ -84,12 +85,13 @@ func (t *assistant) InitAndStart() (err error) {
 				xlog.Infof("`%s` stopped", t.Name())
 				return
 			default:
-				actions, _ := t.queue.Dequeue(context.Background(), 10)
+				ctx := context.Background()
+				actions, _ := t.queue.Dequeue(ctx, 10)
 				if len(actions) > 0 {
 					for _, action := range actions {
 						fn := actionFuncs[action.ActionType]
 						if fn != nil {
-							fn(&action)
+							fn(ctx, &action)
 						} else {
 							xlog.Warnf("`%s` unknown action type: %d, ignore message: %s", t.Name(), action.ActionType, util.JsonString(action))
 						}
@@ -173,7 +175,7 @@ func (a *assistant) UserActionCallback(ctx *gin.Context, req *model.UserAction) 
 	return nil, err
 }
 
-func (a *assistant) handleChat(req *model.UserAction) {
+func (a *assistant) handleChat(ctx context.Context, req *model.UserAction) {
 	chat, err := model.GetUserActionContent[model.Chat](req)
 	if err != nil {
 		xlog.Warnf("解析chat异常, err:%v, useraction:%v", err, util.JsonString(req))
@@ -195,6 +197,7 @@ func (a *assistant) handleChat(req *model.UserAction) {
 		Role:     string(base.USER),
 		Message:  content.Text,
 	}
+	memories := memory.FetchRelatedMemory(ctx, chat.ChatSessionId(), content.Text, 5000)
 }
 
 func (a *assistant) loadImBot(imBotId string, imBotName string) *AgentModel {
@@ -234,13 +237,13 @@ func (a *assistant) loadImBot(imBotId string, imBotName string) *AgentModel {
 	}
 	return m
 }
-func (a *assistant) handleGroupChat(req *model.UserAction)    {}
-func (a *assistant) handleFollow(req *model.UserAction)       {}
-func (a *assistant) handleCancelFollow(req *model.UserAction) {}
-func (a *assistant) handleLike(req *model.UserAction)         {}
-func (a *assistant) handleCancelLike(req *model.UserAction)   {}
-func (a *assistant) handleJoinGroup(req *model.UserAction)    {}
-func (a *assistant) handleExistGroup(req *model.UserAction)   {}
-func (a *assistant) handleComment(req *model.UserAction)      {}
-func (a *assistant) handleReplyComment(req *model.UserAction) {}
-func (a *assistant) handleCommentPic(req *model.UserAction)   {}
+func (a *assistant) handleGroupChat(ctx context.Context, req *model.UserAction)    {}
+func (a *assistant) handleFollow(ctx context.Context, req *model.UserAction)       {}
+func (a *assistant) handleCancelFollow(ctx context.Context, req *model.UserAction) {}
+func (a *assistant) handleLike(ctx context.Context, req *model.UserAction)         {}
+func (a *assistant) handleCancelLike(ctx context.Context, req *model.UserAction)   {}
+func (a *assistant) handleJoinGroup(ctx context.Context, req *model.UserAction)    {}
+func (a *assistant) handleExistGroup(ctx context.Context, req *model.UserAction)   {}
+func (a *assistant) handleComment(ctx context.Context, req *model.UserAction)      {}
+func (a *assistant) handleReplyComment(ctx context.Context, req *model.UserAction) {}
+func (a *assistant) handleCommentPic(ctx context.Context, req *model.UserAction)   {}

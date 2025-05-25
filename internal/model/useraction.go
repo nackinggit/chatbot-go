@@ -1,12 +1,13 @@
 package model
 
 import (
+	"context"
 	"errors"
 
 	"com.imilair/chatbot/pkg/util"
 )
 
-type HandleCallback func(useraction *UserAction)
+type HandleCallback func(ctx context.Context, useraction *UserAction)
 
 type ActionType string
 

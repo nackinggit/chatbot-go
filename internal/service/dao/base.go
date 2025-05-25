@@ -73,3 +73,7 @@ func QueryById[T any](ctx context.Context, t T, id any) (*T, error) {
 	err := Dao.GetDbTableByModel(ctx, &t).Where("id = ?", id).First(&t).Error
 	return &t, err
 }
+
+func BatchInsert[T any](ctx context.Context, t T, list []T) error {
+	return Dao.GetDbTableByModel(ctx, &t).CreateInBatches(&list, len(list)).Error
+}

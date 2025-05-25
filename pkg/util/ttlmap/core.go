@@ -39,6 +39,16 @@ func New(size int, maxTTL int) (m *TTLMap) {
 	return
 }
 
+func (m *TTLMap) Keys() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	keys := make([]string, 0, len(m.m))
+	for k := range m.m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // Put adds a new item to the map or updates the existing one
 func (m *TTLMap) Put(k string, v interface{}) {
 	m.mu.Lock()

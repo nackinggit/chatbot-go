@@ -114,6 +114,7 @@ type InputType string
 const (
 	Text  InputType = "text"
 	Image InputType = "image"
+	File  InputType = "file"
 )
 
 type OpenaiCompatiableMessageOutput struct {

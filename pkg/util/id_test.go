@@ -3,16 +3,13 @@ package util
 import (
 	"testing"
 	"time"
-
-	"github.com/bwmarrin/snowflake"
 )
 
 func TestNewSnowflakeID(t *testing.T) {
 	for i := range 100 {
-		id := NewSnowflakeID()
+		snId := NewSnowflakeID()
 		time.Sleep(time.Millisecond)
-		snId, _ := snowflake.ParseString(id)
-		t.Logf("%d -> snowflakeID:%s time:%d, node:%d, step:%d", i, id, snId.Time(), snId.Node(), snId.Step())
+		t.Logf("%d -> snowflakeID:%s time:%d, node:%d, step:%d", i, snId.String(), snId.Time(), snId.Node(), snId.Step())
 	}
 }
 

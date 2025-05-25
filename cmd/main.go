@@ -28,6 +28,7 @@ func (a *app) Start() error {
 
 // 回收资源
 func (a *app) Stop() error {
+	service.Stop()
 	xlog.Info("service stop success")
 	return nil
 }

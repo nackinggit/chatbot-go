@@ -6,12 +6,15 @@ import (
 	"com.imilair/chatbot/bootstrap/config"
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/pkg/llm/api/base"
+	"com.imilair/chatbot/pkg/llm/api/coze"
 	"com.imilair/chatbot/pkg/util"
 )
 
 var apis = map[string]base.LLMApi{}
 
-var register = map[string]base.InitApi{}
+var register = map[string]base.InitApi{
+	"coze": coze.InitApi,
+}
 
 func Init(cfgs []*config.LLMConfig) error {
 	xlog.Infof("init llm %s", util.BeautifulJson(cfgs))

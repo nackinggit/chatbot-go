@@ -3,16 +3,31 @@ package server
 import (
 	"time"
 
+	"com.imilair/chatbot/bootstrap/gin/middlewares"
+	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service/agents"
+	"com.imilair/chatbot/pkg/util"
+	"com.imilair/chatbot/pkg/util/ttlmap"
 	"github.com/gin-gonic/gin"
 )
 
+var ur = ttlmap.New(10000, 30)
+
 func userActionCallback(ctx *gin.Context) {
+
 	var req model.UserAction
 	if err := ctx.BindJSON(&req); err != nil {
 		JSONE(ctx, err, &req)
 		return
+	}
+	mid := middlewares.GetMid(ctx)
+	if mid != "" && ur.Contains(mid) {
+		xlog.Infof("message %s handled...", util.JsonString(req))
+		JSONR(ctx, nil, nil)
+		return
+	} else {
+		ur.Put(mid, true)
 	}
 	if req.ActionType == model.ROOM {
 		chatRoom, err := model.GetUserActionContent[model.Room](&req)

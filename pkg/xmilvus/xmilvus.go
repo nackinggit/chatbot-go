@@ -5,19 +5,19 @@ import (
 
 	"com.imilair/chatbot/bootstrap/config"
 	xlog "com.imilair/chatbot/bootstrap/log"
-	"github.com/milvus-io/milvus-sdk-go/v2/client"
+	"github.com/milvus-io/milvus/client/v2/milvusclient"
 )
 
 type XMilvus struct {
-	client client.Client
-	cfg    *config.MilvusConfig
+	*milvusclient.Client
+	cfg *config.MilvusConfig
 }
 
 var xclient *XMilvus
 
 func Init(cfg *config.MilvusConfig) error {
 	xlog.Infof("Init Milvus client: %s", cfg.Address)
-	client, err := client.NewClient(context.Background(), client.Config{
+	client, err := milvusclient.New(context.Background(), &milvusclient.ClientConfig{
 		Address:  cfg.Address,
 		Username: cfg.Username,
 		Password: cfg.Password,
@@ -26,16 +26,16 @@ func Init(cfg *config.MilvusConfig) error {
 		return err
 	}
 	xclient = &XMilvus{
-		client: client,
+		Client: client,
 		cfg:    cfg,
 	}
 	return nil
 }
 
 func (x *XMilvus) Close() {
-	if x.client != nil {
+	if x.Client != nil {
 		xlog.Infof("Close Milvus client: %s", x.cfg.Address)
-		x.client.Close()
+		x.Close()
 	}
 }
 

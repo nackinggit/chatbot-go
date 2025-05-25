@@ -20,7 +20,7 @@ func (t *manghe) Name() string {
 	return "manghe"
 }
 
-func (t *manghe) Init() (err error) {
+func (t *manghe) InitAndStart() (err error) {
 	xlog.Infof("init service `%s`", t.Name())
 	mangheCfg := service.Config.MangHe
 	err = mangheCfg.Validate()
@@ -41,8 +41,12 @@ func (t *manghe) Init() (err error) {
 	return nil
 }
 
+func (t *manghe) Stop() {
+
+}
+
 func init() {
-	service.Register(&teacher{})
+	service.Register(&manghe{})
 }
 
 func (m *manghe) ImageAnalyse(ctx *gin.Context, imgUrl string) {

@@ -12,11 +12,11 @@ const TableNameLlmChatHistory = "llm_chat_history"
 
 // LlmChatHistory 模型信息
 type LlmChatHistory struct {
-	ID        int64     `gorm:"column:id;primaryKey;comment:id" json:"id"`                  // id
-	Mid       string    `gorm:"column:mid;not null;comment:消息id" json:"mid"`                // 消息id
-	Sid       string    `gorm:"column:sid;not null;comment:会话id" json:"sid"`                // 会话id
-	ImUserID  int64     `gorm:"column:im_user_id;not null;comment:用户id" json:"im_user_id"`  // 用户id
-	ImBotID   int64     `gorm:"column:im_bot_id;not null;comment:IM机器人id" json:"im_bot_id"` // IM机器人id
+	ID        int64     `gorm:"column:id;primaryKey;comment:id" json:"id"`                            // id
+	Mid       string    `gorm:"column:mid;not null;comment:消息id" json:"mid"`                          // 消息id
+	Sid       string    `gorm:"column:sid;not null;comment:会话id" json:"sid"`                          // 会话id
+	ImUserID  string    `gorm:"column:im_user_id;not null;default:0;comment:用户id" json:"im_user_id"`  // 用户id
+	ImBotID   string    `gorm:"column:im_bot_id;not null;default:0;comment:IM机器人id" json:"im_bot_id"` // IM机器人id
 	Role      string    `gorm:"column:role;not null" json:"role"`
 	Message   string    `gorm:"column:message;comment:消息内容" json:"message"`                                          // 消息内容
 	CreatedAt time.Time `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP;comment:创建时间" json:"created_at"` // 创建时间

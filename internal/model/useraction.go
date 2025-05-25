@@ -32,10 +32,15 @@ type UserAction struct {
 }
 
 type Chat struct {
-	ReceiverId  string   `json:"receiverId"`
+	SenderId    string   `json:"senderId"`
+	ReceiverId  string   `json:"receiveId"`
 	MsgId       string   `json:"msgId"`
 	SceneIds    []string `json:"sceneIds"`
 	BotNickname string   `json:"botNickname"`
+}
+
+func (c *Chat) ChatSessionId() string {
+	return c.ReceiverId + ":" + c.SenderId
 }
 
 type GroupChat struct {

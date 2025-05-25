@@ -21,7 +21,7 @@ func (t *daoService) Name() string {
 	return "dao"
 }
 
-func (t *daoService) Init() error {
+func (t *daoService) InitAndStart() error {
 	cfg := service.Config.Dao
 	if cfg == nil {
 		return fmt.Errorf("init service `%s` failed, config is nil", t.Name())
@@ -34,6 +34,8 @@ func (t *daoService) Init() error {
 	Dao = t
 	return nil
 }
+
+func (t *daoService) Stop() {}
 
 func init() {
 	service.Register(&daoService{})
@@ -65,4 +67,9 @@ func (dao *daoService) GetDbTableByModel(ctx context.Context, dbmodel interface{
 
 func (dao *daoService) GetDbTableByName(ctx context.Context, modelname string) *gorm.DB {
 	return dao.TxDB(ctx).Table(modelname)
+}
+
+func QueryById[T any](ctx context.Context, t T, id any) (*T, error) {
+	err := Dao.GetDbTableByModel(ctx, &t).Where("id = ?", id).First(&t).Error
+	return &t, err
 }

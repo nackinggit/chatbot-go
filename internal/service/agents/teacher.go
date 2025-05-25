@@ -27,7 +27,7 @@ func (t *teacher) Name() string {
 	return "teacher"
 }
 
-func (t *teacher) Init() (err error) {
+func (t *teacher) InitAndStart() (err error) {
 	initModel := func(cfg *config.BotConfig) (*AgentModel, error) {
 		api, err := llm.GetApi(cfg.Api)
 		if err != nil {
@@ -68,6 +68,10 @@ func (t *teacher) Init() (err error) {
 	TeacherService = t
 	xlog.Infof("`%s` inited", t.Name())
 	return nil
+}
+
+func (t *teacher) Stop() {
+
 }
 
 func init() {

@@ -11,6 +11,9 @@ import (
 )
 
 func Marshal(src any) ([]byte, error) {
+	if src == nil {
+		return []byte(""), nil
+	}
 	byteBuf := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(byteBuf)
 	encoder.SetEscapeHTML(false)

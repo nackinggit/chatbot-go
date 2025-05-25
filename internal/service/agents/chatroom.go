@@ -26,7 +26,7 @@ func (t *chatroom) Name() string {
 	return "chatroom"
 }
 
-func (t *chatroom) Init() (err error) {
+func (t *chatroom) InitAndStart() (err error) {
 	xlog.Infof("init service `%s`", t.Name())
 	chatroomCfg := service.Config.ChatRoom
 	err = chatroomCfg.Validate()
@@ -71,8 +71,12 @@ func (t *chatroom) Init() (err error) {
 	return nil
 }
 
+func (t *chatroom) Stop() {
+	t.endflag <- true
+}
+
 func init() {
-	service.Register(&teacher{})
+	service.Register(&chatroom{})
 }
 
 func ChatRoom() *chatroom {

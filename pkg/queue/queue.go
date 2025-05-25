@@ -36,6 +36,11 @@ func NewQueue[T any](key string) *Queue[T] {
 }
 
 func (q *Queue[T]) Size() int32 {
+	size, _ := xredis.ExecRedisCmd(func(mr *xredis.XRedisClient) (int64, error) {
+		cmd := mr.LLen(context.Background(), q.key)
+		return cmd.Result()
+	})
+	q.size = int32(size)
 	return q.size
 }
 

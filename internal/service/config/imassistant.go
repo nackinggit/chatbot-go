@@ -5,6 +5,7 @@ import "errors"
 type AssistantConfig struct {
 	ExtractName    *BotConfig `json:"extractName" yaml:"extractName" mapstructure:"extractName"`
 	CommentImage   *BotConfig `json:"commentImage" yaml:"commentImage" mapstructure:"commentImage"`
+	Chat           *BotConfig `json:"chat" yaml:"chat" mapstructure:"chat"`
 	ComicTranslate string     `json:"comicTranslate" yaml:"comicTranslate" mapstructure:"comicTranslate"`
 }
 

@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/bcode"
 	"com.imilair/chatbot/internal/model"
+	"com.imilair/chatbot/internal/model/dbmodel"
 	"com.imilair/chatbot/internal/service"
 	"com.imilair/chatbot/internal/service/config"
+	"com.imilair/chatbot/internal/service/dao"
+	"com.imilair/chatbot/internal/service/imapi"
 	"com.imilair/chatbot/pkg/llm/api/base"
 	"com.imilair/chatbot/pkg/queue"
 	"com.imilair/chatbot/pkg/util"
@@ -21,6 +25,7 @@ import (
 )
 
 var AssistantService *assistant
+var registeredImBot = sync.Map{}
 
 var actionFuncs = map[model.ActionType]model.HandleCallback{
 	model.CHAT:          AssistantService.handleChat,
@@ -37,18 +42,19 @@ var actionFuncs = map[model.ActionType]model.HandleCallback{
 }
 
 type assistant struct {
-	cfg          *config.AssistantConfig
-	extractName  *AgentModel
-	commentImage *AgentModel
-	queue        *queue.Queue[model.UserAction]
-	endflag      chan bool
+	cfg            *config.AssistantConfig
+	extractName    *AgentModel
+	commentImage   *AgentModel
+	defaultChatBot *AgentModel
+	queue          *queue.Queue[model.UserAction]
+	endflag        chan bool
 }
 
 func (t *assistant) Name() string {
 	return "agents.assistant"
 }
 
-func (t *assistant) Init() (err error) {
+func (t *assistant) InitAndStart() (err error) {
 	xlog.Infof("init service `%s`", t.Name())
 	cfg := service.Config.Assistant
 	err = cfg.Validate()
@@ -61,6 +67,10 @@ func (t *assistant) Init() (err error) {
 		return err
 	}
 	t.commentImage, err = initModel(cfg.CommentImage)
+	if err != nil {
+		return err
+	}
+	t.defaultChatBot, err = initModel(cfg.Chat)
 	if err != nil {
 		return err
 	}
@@ -93,6 +103,10 @@ func (t *assistant) Init() (err error) {
 	xlog.Infof("`%s` inited", t.Name())
 	AssistantService = t
 	return nil
+}
+
+func (t *assistant) Stop() {
+	t.endflag <- true
 }
 
 func init() {
@@ -159,7 +173,67 @@ func (a *assistant) UserActionCallback(ctx *gin.Context, req *model.UserAction) 
 	return nil, err
 }
 
-func (a *assistant) handleChat(req *model.UserAction)         {}
+func (a *assistant) handleChat(req *model.UserAction) {
+	chat, err := model.GetUserActionContent[model.Chat](req)
+	if err != nil {
+		xlog.Warnf("解析chat异常, err:%v, useraction:%v", err, util.JsonString(req))
+		return
+	}
+	val, _ := registeredImBot.LoadOrStore(chat.ReceiverId, a.loadImBot(chat.ReceiverId, chat.BotNickname))
+	imBot := val.(*AgentModel)
+	content, err := imapi.ImapiService.QueryChatContent(chat.ReceiverId, chat.MsgId)
+	if err != nil {
+		xlog.Warnf("获取chat内容失败, err:%v", err)
+		return
+	}
+	input := dbmodel.LlmChatHistory{
+		ID:       util.NewSnowflakeID().Int64(),
+		Mid:      chat.MsgId,
+		Sid:      chat.ChatSessionId(),
+		ImUserID: chat.SenderId,
+		ImBotID:  chat.ReceiverId,
+		Role:     string(base.USER),
+		Message:  content.Text,
+	}
+}
+
+func (a *assistant) loadImBot(imBotId string, imBotName string) *AgentModel {
+	imbot, err := dao.QueryById(context.Background(), dbmodel.LlmModel{}, imBotId)
+	if err != nil {
+		xlog.Errorf("获取imbot失败, err:%v, 使用默认bot", err)
+		return &AgentModel{
+			LLMModel: a.defaultChatBot.LLMModel,
+			Cfg: &config.BotConfig{
+				ModelKey: a.defaultChatBot.Model,
+				Model:    a.defaultChatBot.Name,
+				Name:     imBotName,
+				BotId:    imBotId,
+				Api:      a.defaultChatBot.Api.Cfg().RegisterService,
+			},
+		}
+	}
+	m, err := initModel(&config.BotConfig{
+		Model:    imbot.ModelName,
+		ModelKey: imbot.ModelKey,
+		Name:     imbot.BindImBotName,
+		Api:      imbot.API,
+		BotId:    imbot.BindImBotID,
+	})
+	if err != nil {
+		xlog.Errorf("初始化bot失败, err:%v, 使用默认bot", err)
+		return &AgentModel{
+			LLMModel: a.defaultChatBot.LLMModel,
+			Cfg: &config.BotConfig{
+				ModelKey: a.defaultChatBot.Model,
+				Model:    a.defaultChatBot.Name,
+				Name:     imBotName,
+				BotId:    imBotId,
+				Api:      a.defaultChatBot.Api.Cfg().RegisterService,
+			},
+		}
+	}
+	return m
+}
 func (a *assistant) handleGroupChat(req *model.UserAction)    {}
 func (a *assistant) handleFollow(req *model.UserAction)       {}
 func (a *assistant) handleCancelFollow(req *model.UserAction) {}

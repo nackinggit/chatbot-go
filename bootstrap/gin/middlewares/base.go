@@ -62,7 +62,7 @@ func setmid(ctx *gin.Context) {
 	ctx.Header("x-mid", hex.EncodeToString(hash[:]))
 	rid := ctx.GetHeader("X-Request-Id")
 	if rid == "" {
-		rid = util.NewSnowflakeID()
+		rid = util.NewSnowflakeID().String()
 		ctx.Header("X-Request-Id", rid)
 	}
 }

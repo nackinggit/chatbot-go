@@ -12,7 +12,8 @@ var Config = config.ServiceConfig{}
 
 type ServiceI interface {
 	Name() string
-	Init() error
+	InitAndStart() error
+	Stop()
 }
 
 type service struct {
@@ -36,7 +37,7 @@ func Init() error {
 		if ok {
 			svc.once.Do(func() {
 				xlog.Infof("init service `%s`...", svc.is.Name())
-				err = svc.is.Init()
+				err = svc.is.InitAndStart()
 				if err != nil {
 					xlog.Warnf("init service `%s` failed: %v", svc.is.Name(), err)
 					return
@@ -51,6 +52,19 @@ func Init() error {
 		return err == nil
 	})
 	return err
+}
+
+func Stop() {
+	reigstered.Range(func(key, value any) bool {
+		svc, ok := value.(*service)
+		if ok {
+			xlog.Infof("stop service `%s`...", svc.is.Name())
+			svc.is.Stop()
+		} else {
+			xlog.Warn("Invalid service type %T, %v", value, key)
+		}
+		return true
+	})
 }
 
 func Register(s ServiceI) {

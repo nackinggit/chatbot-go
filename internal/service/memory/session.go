@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
@@ -101,6 +102,15 @@ type Session struct {
 	ID          string
 	longMemory  *LongMemory
 	shortMemory *ShortMemory
+}
+
+func AddMemory(ctx context.Context, sessionId string, memory *MemoryItems) error {
+	session := getSession(sessionId)
+	if session == nil {
+		xlog.Infof("session not found: %s", sessionId)
+		return errors.New("session not found")
+	}
+	return session.shortMemory.append(ctx, memory)
 }
 
 // FetchRelatedMemory 根据 sessionId 获取相关的记忆信息

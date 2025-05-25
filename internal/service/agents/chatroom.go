@@ -84,6 +84,7 @@ func ChatRoom() *chatroom {
 }
 
 func (t *chatroom) RoomActionCallback(ctx *gin.Context, req *model.Room) (any, error) {
+	t.queue.Enqueue(ctx, *req)
 	return nil, nil
 }
 

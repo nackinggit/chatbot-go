@@ -19,7 +19,7 @@ func (r *ReplyMessage) getContent() string {
 }
 
 type ReplyTo struct {
-	TargetId int `json:"target_id"`
+	TargetId int64 `json:"target_id"`
 }
 
 type ReplyContent struct {

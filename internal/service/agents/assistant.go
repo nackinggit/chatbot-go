@@ -176,6 +176,20 @@ func (a *assistant) UserActionCallback(ctx *gin.Context, req *model.UserAction) 
 	return nil, err
 }
 
+func cvtMemory(memories []*memory.MemoryItems, input *dbmodel.LlmChatHistory) []*base.MessageInput {
+	mis := []*base.MessageInput{}
+	for _, mi := range memories {
+		for _, m := range mi.Memories {
+			mis = append(mis, &base.MessageInput{
+				Role:          base.MessageRole(m.Role),
+				StringContent: m.Message,
+			})
+		}
+	}
+	mis = append(mis, base.UserStringMessage(input.Message))
+	return mis
+}
+
 func (a *assistant) handleChat(ctx context.Context, req *model.UserAction) {
 	chat, err := model.GetUserActionContent[model.Chat](req)
 	if err != nil {
@@ -189,16 +203,57 @@ func (a *assistant) handleChat(ctx context.Context, req *model.UserAction) {
 	}
 	val, _ := registeredImBot.LoadOrStore(chat.ReceiverId, a.loadImBot(chat.ReceiverId, chat.BotNickname, content))
 	imBot := val.(*AgentModel)
-	input := dbmodel.LlmChatHistory{
+	input := &dbmodel.LlmChatHistory{
 		ID:       util.NewSnowflakeID().Int64(),
 		Mid:      chat.MsgId,
-		Sid:      chat.ChatSessionId(),
 		ImUserID: chat.SenderId,
 		ImBotID:  chat.ReceiverId,
 		Role:     string(base.USER),
 		Message:  content.Text,
 	}
 	memories := memory.FetchRelatedMemory(ctx, chat.ChatSessionId(), content.Text, 5000)
+	messages := cvtMemory(memories, input)
+	output, err := imBot.Chat(ctx, messages)
+	if err != nil {
+		xlog.Warnf("imbot聊天失败, err:%v", err)
+		imapi.ImapiService.SendMessage(&imapi.ReplyMessage{
+			SenderId: chat.ReceiverId,
+			ReplyTo: &imapi.ReplyTo{
+				TargetId: util.StringToInt64(chat.SenderId),
+			},
+			ReplyContent: &imapi.ReplyContent{
+				Content: "...(沉默一会儿)",
+				Type:    imapi.Text,
+			},
+		}, "chat")
+		return
+	}
+	err = imapi.ImapiService.SendMessage(&imapi.ReplyMessage{
+		SenderId: chat.ReceiverId,
+		ReplyTo: &imapi.ReplyTo{
+			TargetId: util.StringToInt64(chat.SenderId),
+		},
+		ReplyContent: &imapi.ReplyContent{
+			Content: output.Content,
+			Type:    imapi.Text,
+		},
+	}, "chat")
+	if err == nil {
+		memory.AddMemory(ctx, chat.ChatSessionId(), &memory.MemoryItems{
+			CreateTime: time.Now().UnixMilli(),
+			Memories: []*dbmodel.LlmChatHistory{input, {
+				ID:       util.NewSnowflakeID().Int64(),
+				Mid:      util.Md5Object(output.Content),
+				ImUserID: chat.SenderId,
+				ImBotID:  chat.ReceiverId,
+				Role:     string(base.Assistant),
+				Message:  output.Content,
+			}},
+			Sid: util.Md5Object(fmt.Sprintf("%v\n%v", input.Message, output.Content)),
+		})
+	} else {
+		xlog.Warnf("imbot聊天失败, err:%v", err)
+	}
 }
 
 func (a *assistant) loadImBot(imBotId string, imBotName string, imcontent *imapi.ChatContent) *AgentModel {

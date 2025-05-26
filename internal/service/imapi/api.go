@@ -45,7 +45,7 @@ func init() {
 	service.Register(&imapi{})
 }
 
-func (t *imapi) SendMessage(reply *ReplyMessage, scene string) {
+func (t *imapi) SendMessage(reply *ReplyMessage, scene string) error {
 	if scene == "" {
 		scene = "chat"
 	}
@@ -74,6 +74,7 @@ func (t *imapi) SendMessage(reply *ReplyMessage, scene string) {
 	if err != nil {
 		xlog.Warnf("发送消息失败: %v", err)
 	}
+	return err
 }
 
 // 发布评论

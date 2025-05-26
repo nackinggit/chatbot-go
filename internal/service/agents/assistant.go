@@ -43,12 +43,13 @@ var actionFuncs = map[model.ActionType]model.HandleCallback{
 }
 
 type assistant struct {
-	cfg            *config.AssistantConfig
-	extractName    *AgentModel
-	commentImage   *AgentModel
-	defaultChatBot *AgentModel
-	queue          *queue.Queue[model.UserAction]
-	endflag        chan bool
+	cfg                 *config.AssistantConfig
+	extractName         *AgentModel
+	commentImage        *AgentModel
+	defaultChatBot      *AgentModel
+	defaultReasoningBot *AgentModel
+	queue               *queue.Queue[model.UserAction]
+	endflag             chan bool
 }
 
 func (t *assistant) Name() string {
@@ -181,13 +182,13 @@ func (a *assistant) handleChat(ctx context.Context, req *model.UserAction) {
 		xlog.Warnf("解析chat异常, err:%v, useraction:%v", err, util.JsonString(req))
 		return
 	}
-	val, _ := registeredImBot.LoadOrStore(chat.ReceiverId, a.loadImBot(chat.ReceiverId, chat.BotNickname))
-	imBot := val.(*AgentModel)
 	content, err := imapi.ImapiService.QueryChatContent(chat.ReceiverId, chat.MsgId)
 	if err != nil {
 		xlog.Warnf("获取chat内容失败, err:%v", err)
 		return
 	}
+	val, _ := registeredImBot.LoadOrStore(chat.ReceiverId, a.loadImBot(chat.ReceiverId, chat.BotNickname, content))
+	imBot := val.(*AgentModel)
 	input := dbmodel.LlmChatHistory{
 		ID:       util.NewSnowflakeID().Int64(),
 		Mid:      chat.MsgId,
@@ -200,20 +201,36 @@ func (a *assistant) handleChat(ctx context.Context, req *model.UserAction) {
 	memories := memory.FetchRelatedMemory(ctx, chat.ChatSessionId(), content.Text, 5000)
 }
 
-func (a *assistant) loadImBot(imBotId string, imBotName string) *AgentModel {
+func (a *assistant) loadImBot(imBotId string, imBotName string, imcontent *imapi.ChatContent) *AgentModel {
+	defaultChatAgent := &AgentModel{
+		LLMModel: a.defaultChatBot.LLMModel,
+		Cfg: &config.BotConfig{
+			ModelKey: a.defaultChatBot.Model,
+			Model:    a.defaultChatBot.Name,
+			Name:     imBotName,
+			BotId:    imBotId,
+			Api:      a.defaultChatBot.Api.Cfg().RegisterService,
+		},
+	}
+
+	defaultReasoningAgent := &AgentModel{
+		LLMModel: a.defaultReasoningBot.LLMModel,
+		Cfg: &config.BotConfig{
+			ModelKey: a.defaultReasoningBot.Model,
+			Model:    a.defaultReasoningBot.Name,
+			Name:     imBotName,
+			BotId:    imBotId,
+			Api:      a.defaultReasoningBot.Api.Cfg().RegisterService,
+		},
+	}
+	if imcontent.ChatMode == "reasoning" && imcontent.Model == "deepseek" {
+		return defaultReasoningAgent
+	}
+
 	imbot, err := dao.QueryById(context.Background(), dbmodel.LlmModel{}, imBotId)
 	if err != nil {
 		xlog.Errorf("获取imbot失败, err:%v, 使用默认bot", err)
-		return &AgentModel{
-			LLMModel: a.defaultChatBot.LLMModel,
-			Cfg: &config.BotConfig{
-				ModelKey: a.defaultChatBot.Model,
-				Model:    a.defaultChatBot.Name,
-				Name:     imBotName,
-				BotId:    imBotId,
-				Api:      a.defaultChatBot.Api.Cfg().RegisterService,
-			},
-		}
+		return defaultChatAgent
 	}
 	m, err := initModel(&config.BotConfig{
 		Model:    imbot.ModelName,

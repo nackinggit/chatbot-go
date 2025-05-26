@@ -21,6 +21,13 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type Event struct {
+	Where     string `json:"where"`
+	Event     string `json:"event"`
+	Todo      string `json:"todo"`
+	Emotional string `json:"emotional"`
+}
+
 type MemoryItems struct {
 	CreateTime int64
 	Memories   []*dbmodel.LlmChatHistory

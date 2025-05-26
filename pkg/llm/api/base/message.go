@@ -24,6 +24,13 @@ type MessageInput struct {
 	Role               MessageRole    `json:"role"`
 }
 
+func SystemStringMessage(content string) *MessageInput {
+	return &MessageInput{
+		StringContent: content,
+		Role:          SYSTEM,
+	}
+}
+
 func UserStringMessage(content string) *MessageInput {
 	return &MessageInput{
 		StringContent: content,

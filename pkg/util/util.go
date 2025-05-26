@@ -225,3 +225,11 @@ func SubString(str string, start int, end int) string {
 	}
 	return string(rs[start:end])
 }
+
+func ReverseSlice[T any](lst []*T) []*T {
+	ret := []*T{}
+	for i := len(lst) - 1; i >= 0; i-- {
+		ret = append(ret, lst[i])
+	}
+	return ret
+}

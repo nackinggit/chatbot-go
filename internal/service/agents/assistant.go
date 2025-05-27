@@ -118,7 +118,9 @@ func init() {
 
 func (a *assistant) ExtractName(ctx *gin.Context, req *model.ExtractNameRequest) (*model.ExtractNameResponse, error) {
 	record := strings.Join(req.Content, "\n")
-	content := fmt.Sprintf("根据以下`用户`和`小助手`的对话, 提取`用户`对`小助手`的昵称\n```%s```\n请用json的格式输出，如：{\"nickname\": <对小助手的称呼>}", record)
+	content := fmt.Sprintf("根据以下`用户`和`小助手`的对话, 提取`用户`对`小助手`的昵称\n"+
+		"```%s```\n"+
+		"请用json的格式输出，如：{\"nickname\": <对小助手的称呼>}", record)
 	ms := []*base.MessageInput{
 		base.UserStringMessage(content),
 	}

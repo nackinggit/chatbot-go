@@ -24,7 +24,7 @@ type teacher struct {
 }
 
 func (t *teacher) Name() string {
-	return "teacher"
+	return "agents.teacher"
 }
 
 func (t *teacher) InitAndStart() (err error) {

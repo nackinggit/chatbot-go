@@ -185,3 +185,23 @@ func (t *imapi) QueryCommentById(commentId string) (*ImComment, error) {
 	}
 	return resp.Data, nil
 }
+
+func (t *imapi) QueryChatRoomSetting(roomId string) (*ChatRoomSetting, error) {
+	url := fmt.Sprintf("%s/room/info?room_id=%s", t.baseUrl, roomId)
+	headers := map[string][]string{
+		"LoginUserId": {"7"},
+	}
+	var resp struct {
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data *ChatRoomSetting `json:"data"`
+	}
+	err := xhttp.GetAndBind(context.Background(), url, headers, &resp)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Data == nil {
+		xlog.Warnf("获取评论信息失败: %v", util.JsonString(resp))
+	}
+	return resp.Data, nil
+}

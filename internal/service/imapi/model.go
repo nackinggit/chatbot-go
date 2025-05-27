@@ -1,6 +1,11 @@
 package imapi
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/pkg/util"
+)
 
 type ContentType string
 
@@ -42,16 +47,51 @@ type ImComment struct {
 	Commentor *ImUser `json:"user"`
 }
 
+// im用户
 type ImUser struct {
 	UserId   json.Number `json:"userId"`
 	Nickname string      `json:"nickname"`
+	AiConfig string      `json:"aiConfig"`
 }
 
+func (imuser *ImUser) ParseAiConfig() *AiConfig {
+	if imuser == nil || imuser.AiConfig == "" {
+		return nil
+	}
+	var aiCfg AiConfig
+	err := util.Unmarshal([]byte(imuser.AiConfig), &aiCfg)
+	if err != nil {
+		xlog.Warnf("imuser.ParseAiConfig(%v) error: %v", imuser.AiConfig, err)
+		return nil
+	}
+	return &aiCfg
+}
+
+type AiConfig struct {
+	ModelApi  string `json:"modelApi"`  // 模型api名称
+	ModelCode string `json:"modelCode"` // 模型代码
+}
+
+// im帖子
 type ImPost struct {
 	Title string  `json:"title"`
 	User  *ImUser `json:"user"`
 }
 
+// im帖子下的评论
 type PostComments struct {
 	Comments []*ImComment `json:"list"`
+}
+
+// im聊天室设置
+type ChatRoomSetting struct {
+	Id         json.Number `json:"id"`
+	PresenterA *ImUser     `json:"presenterA"`
+	PresenterB *ImUser     `json:"presenterB"`
+	Topic      *ChatTopic  `json:"topic"`
+}
+
+type ChatTopic struct {
+	Image string `json:"image"`
+	Title string `json:"title"`
 }

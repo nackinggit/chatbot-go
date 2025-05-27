@@ -7,8 +7,10 @@ import (
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service"
+	"com.imilair/chatbot/internal/service/imapi"
 	"com.imilair/chatbot/pkg/queue"
 	"com.imilair/chatbot/pkg/util"
+	"com.imilair/chatbot/pkg/util/ttlmap"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,14 +18,13 @@ var ChatRoomService *chatroom
 
 type chatroom struct {
 	topicRecModel *AgentModel
-	hostModel1    *AgentModel
-	hostModel2    *AgentModel
 	queue         *queue.Queue[model.Room]
 	endflag       chan bool
+	tmpvalMap     *ttlmap.TTLMap
 }
 
 func (t *chatroom) Name() string {
-	return "chatroom"
+	return "agents.chatroom"
 }
 
 func (t *chatroom) InitAndStart() (err error) {
@@ -37,15 +38,7 @@ func (t *chatroom) InitAndStart() (err error) {
 	if err != nil {
 		return err
 	}
-	t.hostModel1, err = initModel(chatroomCfg.HostModel1)
-	if err != nil {
-		return err
-	}
-	t.hostModel2, err = initModel(chatroomCfg.HostModel2)
-	if err != nil {
-		return err
-	}
-	t.queue = queue.NewQueue[model.Room]("chatroom_message")
+	t.queue = queue.NewQueue[model.Room]("chatroom:message")
 	t.endflag = make(chan bool)
 	util.AsyncGoWithDefault(context.Background(), func() {
 		xlog.Infof("`%s` chatroom message handler started", t.Name())
@@ -88,8 +81,8 @@ func (t *chatroom) RoomActionCallback(ctx *gin.Context, req *model.Room) (any, e
 	return nil, nil
 }
 
-func (t *chatroom) ReplySpeak() string {
-	return ""
+func (t *chatroom) replyUser(chatroomSetting *imapi.ChatRoomSetting, userInfo *model.ChatRoomUserInfo) {
+
 }
 
 func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendRequest) {
@@ -103,5 +96,27 @@ func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendReq
 }
 
 func (t *chatroom) handleRoomMessage(req *model.Room) {
+	if req.UserInfo == nil {
+		xlog.Warnf("[处理聊天室消息] 用户信息为空")
+		return
+	}
+	roomId := req.RoomId
+	chatroomSetting, err := imapi.ImapiService.QueryChatRoomSetting(roomId)
+	if err != nil {
+		xlog.Errorf("查询聊天室信息失败：%v", err)
+		return
+	}
+	if req.UserInfo.Action == "join" {
+		xlog.Infof("用户 %d 加入聊天室 %d", req.UserInfo.Nickname, roomId)
+		t.welcomeUser(chatroomSetting, req.UserInfo)
+	} else if req.UserInfo.Action == "speak" {
+		xlog.Infof("用户 %d 发送小纸条到聊天室 %d", req.UserInfo.Nickname, roomId)
+		t.replyUser(chatroomSetting, req.UserInfo)
+	} else {
+		xlog.Warnf("未知聊天室事件：%v", req.UserInfo.Action)
+	}
+}
+
+func (t *chatroom) welcomeUser(chatroomSetting *imapi.ChatRoomSetting, userInfo *model.ChatRoomUserInfo) {
 
 }

@@ -17,7 +17,7 @@ type manghe struct {
 }
 
 func (t *manghe) Name() string {
-	return "manghe"
+	return "agens.manghe"
 }
 
 func (t *manghe) InitAndStart() (err error) {

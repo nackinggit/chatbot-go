@@ -36,6 +36,10 @@ func (t *sessionManager) InitAndStart() (err error) {
 		sessions: ttlmap.New(1000, 7200),
 	}
 	mcfg := service.Config.Memory
+	if err := mcfg.Validate(); err != nil {
+		xlog.Warnf("memory config error: %v", err)
+		return err
+	}
 	innerManager.cfg = mcfg
 	innerManager.endflag = make(chan bool)
 	innerManager.eventModel = &base.LLMModel{}

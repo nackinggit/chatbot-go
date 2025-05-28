@@ -17,6 +17,19 @@ type MemoryConfig struct {
 	ShortMemory *ShortMemoryConfig `json:"shortMemory" yaml:"shortMemory" mapstructure:"shortMemory"`  // 短记忆配置
 }
 
+func (m *MemoryConfig) Validate() error {
+	if m == nil || m.LongMemory == nil {
+		return errors.New("long memory config is not valid")
+	}
+	if m.ShortMemory == nil {
+		m.ShortMemory = &ShortMemoryConfig{
+			TTL:     7200,
+			MaxSize: 4000,
+		}
+	}
+	return nil
+}
+
 type LongMemoryConfig struct {
 	VectorDim int    `json:"vectorDim" yaml:"vectorDim" mapstructure:"vectorDim"` // 向量维度
 	EmbApi    string `json:"embApi" yaml:"embApi" mapstructure:"embApi"`          // 长记忆API配置

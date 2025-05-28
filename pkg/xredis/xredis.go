@@ -32,9 +32,11 @@ func Init(cfg *config.RedisConfig) {
 
 func ExecRedisCmd[T any](fn func(mr *XRedisClient) (T, error)) (T, error) {
 	resp, err := fn(redisclient)
-	if err != nil {
+	if err != nil && err != redis.Nil {
 		xlog.Warnf("ExecRedisCmd error: %v", err)
 		return resp, err
+	} else if err == redis.Nil {
+		return resp, nil
 	}
 	return resp, nil
 }

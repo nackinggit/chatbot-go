@@ -7,6 +7,7 @@ import (
 	xlog "com.imilair/chatbot/bootstrap/log"
 	"com.imilair/chatbot/pkg/embedding/apis/base"
 	"com.imilair/chatbot/pkg/embedding/apis/doubao"
+	"com.imilair/chatbot/pkg/util"
 )
 
 var apis = map[string]base.EmbeddingApi{}
@@ -17,7 +18,7 @@ func init() {
 }
 
 func Init(cfgs []*config.EmbeddingConfig) error {
-	xlog.Infof("init embedding apis ...")
+	xlog.Infof("init embedding apis ... %v", util.BeautifulJson(cfgs))
 	for _, cfg := range cfgs {
 		if _, ok := register[cfg.RegisterService]; !ok {
 			return fmt.Errorf("embedding api not found: %s", cfg.RegisterService)

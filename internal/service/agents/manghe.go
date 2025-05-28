@@ -25,6 +25,7 @@ func (t *manghe) InitAndStart() (err error) {
 	mangheCfg := service.Config.MangHe
 	err = mangheCfg.Validate()
 	if err != nil {
+		xlog.Warnf("check manghe config failed: %v", err)
 		return err
 	}
 	t.imageAnalyseModel, err = initModel(mangheCfg.ImageAnalyse)

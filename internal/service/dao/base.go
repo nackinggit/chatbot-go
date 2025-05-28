@@ -23,8 +23,9 @@ func (t *daoService) Name() string {
 
 func (t *daoService) InitAndStart() error {
 	cfg := service.Config.Dao
-	if cfg == nil {
-		return fmt.Errorf("init service `%s` failed, config is nil", t.Name())
+	if err := cfg.Validate(); err != nil {
+		xlog.Warnf("config is invalid, %v", err)
+		return err
 	}
 	xlog.Infof("init service `%s`", t.Name())
 	t.chatbotdb = xmysql.GetDB(cfg.DbName)

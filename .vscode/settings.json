@@ -1,0 +1,18 @@
+{
+    "go.toolsEnvVars": {
+        "GOPROXY": "https://goproxy.cn,direct",
+    },
+    "terminal.integrated.env.linux": {
+        "GOPROXY": "https://goproxy.cn,direct",
+    },
+    "terminal.integrated.env.osx": {
+        "GOPROXY": "https://goproxy.cn,direct",
+    },
+    // "workbench.colorCustomizations": {
+    //     "debugConsole.infoForeground": "#ffffff",
+    //     "debugConsole.sourceForeground": "#ffffff",
+    //     "debugConsole.inputForeground": "#ffffff",
+    //     "debugConsole.warningForeground": "#c1b9b9",
+    //     "debugConsole.errorForeground": "#baaeae",
+    // },
+}

@@ -88,3 +88,10 @@ func (m *TTLMap) Delete(k string) {
 	defer m.mu.Unlock()
 	delete(m.m, k)
 }
+
+func (m *TTLMap) LastAccessTime(k string) int64 {
+	if it, ok := m.m[k]; ok {
+		return it.lastAccess
+	}
+	return 0
+}

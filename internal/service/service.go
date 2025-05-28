@@ -46,7 +46,7 @@ func Init() error {
 				xlog.Infof("init service %s done.", svc.is.Name())
 			})
 		} else {
-			xlog.Warn("Invalid service type %T", value)
+			xlog.Warnf("Invalid service type %T", value)
 			err = errors.New("invalid service type")
 		}
 		return err == nil
@@ -61,7 +61,7 @@ func Stop() {
 			xlog.Infof("stop service `%s`...", svc.is.Name())
 			svc.is.Stop()
 		} else {
-			xlog.Warn("Invalid service type %T, %v", value, key)
+			xlog.Warnf("Invalid service type %T, %v", value, key)
 		}
 		return true
 	})

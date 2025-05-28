@@ -285,7 +285,7 @@ func (r *appRunner[T]) handlStop() {
 		}
 
 		time.Sleep(to)
-		xlog.Error("stop : timeout")
+		xlog.Errorf("stop : timeout")
 		os.Exit(1)
 	}()
 
@@ -301,7 +301,7 @@ func (r *appRunner[T]) handlStop() {
 	if err != nil {
 		xlog.Errorf("stop app error : %v", err)
 	} else {
-		xlog.Info("stop app")
+		xlog.Infof("stop app")
 	}
 	r.Wait()
 	// clean up
@@ -309,7 +309,7 @@ func (r *appRunner[T]) handlStop() {
 	if err != nil {
 		xlog.Errorf("post stop error : %v", err)
 	} else {
-		xlog.Info("post stop")
+		xlog.Infof("post stop")
 	}
 }
 

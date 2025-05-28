@@ -213,7 +213,8 @@ func (a *assistant) handleChat(ctx context.Context, req *model.UserAction) {
 		Role:     string(base.USER),
 		Message:  content.Text,
 	}
-	memories := memory.FetchRelatedMemory(ctx, chat.ChatSessionId(), content.Text, 5000)
+	session := memory.GetSession(ctx, chat.ChatSessionId())
+	memories := session.FetchRelatedMemory(ctx, content.Text, 5000)
 	messages := cvtMemory(memories, input)
 	output, err := imBot.Chat(ctx, messages)
 	if err != nil {
@@ -241,7 +242,7 @@ func (a *assistant) handleChat(ctx context.Context, req *model.UserAction) {
 		},
 	}, "chat")
 	if err == nil {
-		memory.AddMemory(ctx, chat.ChatSessionId(), &memory.MemoryItems{
+		session.AddMemory(ctx, &memory.MemoryItems{
 			CreateTime: time.Now().UnixMilli(),
 			Memories: []*dbmodel.LlmChatHistory{input, {
 				ID:       util.NewSnowflakeID().Int64(),

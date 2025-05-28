@@ -41,9 +41,7 @@ func (t *manghe) InitAndStart() (err error) {
 	return nil
 }
 
-func (t *manghe) Stop() {
-
-}
+func (t *manghe) Stop() {}
 
 func init() {
 	service.Register(&manghe{})

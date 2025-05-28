@@ -22,14 +22,14 @@ func (a *app) Start() error {
 		xlog.Warnf("service init failed: %v", err)
 		return err
 	}
-	xlog.Info("service init success")
+	xlog.Infof("service init success")
 	return nil
 }
 
 // 回收资源
 func (a *app) Stop() error {
 	service.Stop()
-	xlog.Info("service stop success")
+	xlog.Infof("service stop success")
 	return nil
 }
 

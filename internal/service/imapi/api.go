@@ -186,7 +186,7 @@ func (t *imapi) QueryCommentById(commentId string) (*ImComment, error) {
 	return resp.Data, nil
 }
 
-func (t *imapi) QueryChatRoomSetting(roomId string) (*ChatRoomSetting, error) {
+func (t *imapi) QueryChatRoomSetting(ctx context.Context, roomId string) (*ChatRoomSetting, error) {
 	url := fmt.Sprintf("%s/room/info?room_id=%s", t.baseUrl, roomId)
 	headers := map[string][]string{
 		"LoginUserId": {"7"},
@@ -196,7 +196,7 @@ func (t *imapi) QueryChatRoomSetting(roomId string) (*ChatRoomSetting, error) {
 		Msg  string           `json:"msg"`
 		Data *ChatRoomSetting `json:"data"`
 	}
-	err := xhttp.GetAndBind(context.Background(), url, headers, &resp)
+	err := xhttp.GetAndBind(ctx, url, headers, &resp)
 	if err != nil {
 		return nil, err
 	}

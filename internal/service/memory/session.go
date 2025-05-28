@@ -57,7 +57,9 @@ func (t *sessionManager) InitAndStart() (err error) {
 						items := s.shortMemory.fetchForgotMemories(ctx)
 						if len(items) > 20 {
 							s.shortMemory.doForget(ctx)
-							s.longMemory.append(ctx, items)
+							if s.longMemory != nil {
+								s.longMemory.append(ctx, items)
+							}
 							t.summary(ctx, s, items)
 						}
 					}
@@ -132,46 +134,66 @@ func init() {
 	service.Register(&sessionManager{})
 }
 
-func getSession(id string) *Session {
+func doGetSession(id string, persistant bool) *Session {
 	if session, ok := innerManager.sessions.Get(id); ok {
 		return session.(*Session)
-	}
-
-	longM, err := NewLongMemory(innerManager.cfg.LongMemory, id)
-	if err != nil {
-		xlog.Warnf("初始化长期记忆出错, error: %v", err)
-		return nil
 	}
 	shotM := NewShortMemory(id, innerManager.cfg.ShortMemory)
 	session := &Session{
 		ID:          id,
-		longMemory:  longM,
 		shortMemory: shotM,
+	}
+	if persistant {
+		longM, err := NewLongMemory(innerManager.cfg.LongMemory, id)
+		if err != nil {
+			xlog.Warnf("初始化长期记忆出错, error: %v", err)
+			return nil
+		}
+		session.longMemory = longM
 	}
 	innerManager.sessions.Put(id, session)
 	return session
+}
+
+func GetSession(ctx context.Context, id string) *Session {
+	return doGetSession(id, true)
+}
+
+func GetTempSession(ctx context.Context, id string) *Session {
+	return doGetSession(id, false)
 }
 
 type Session struct {
 	ID          string
 	longMemory  *LongMemory
 	shortMemory *ShortMemory
+	lastAccess  int64
 }
 
-func AddMemory(ctx context.Context, sessionId string, memory *MemoryItems) error {
-	session := getSession(sessionId)
+func (session *Session) IsActiveBefore(duration time.Duration) bool {
+	return session.lastAccess+int64(duration.Seconds()) > time.Now().Unix()
+}
+
+func (session *Session) SetSessionActive() {
+	session.lastAccess = time.Now().Unix()
+}
+
+func (session *Session) AddMemory(ctx context.Context, memory *MemoryItems) error {
 	if session == nil {
-		xlog.Infof("session not found: %s", sessionId)
 		return errors.New("session not found")
 	}
-	return session.shortMemory.append(ctx, memory)
+	err := session.shortMemory.append(ctx, memory)
+	if err != nil {
+		return err
+	}
+	session.SetSessionActive()
+	return nil
 }
 
 // FetchRelatedMemory 根据 sessionId 获取相关的记忆信息
-func FetchRelatedMemory(ctx context.Context, sessionId string, input string, maxWords int) []*MemoryItems {
-	session := getSession(sessionId)
+func (session *Session) FetchRelatedMemory(ctx context.Context, input string, maxWords int) []*MemoryItems {
 	if session == nil {
-		xlog.Infof("session not found: %s", sessionId)
+		xlog.Infof("session not found")
 		return []*MemoryItems{}
 	}
 	shotMemories := session.shortMemory.fetch(ctx)
@@ -194,5 +216,6 @@ func FetchRelatedMemory(ctx context.Context, sessionId string, input string, max
 			curWords += memory.WordCount()
 		}
 	}
+	session.SetSessionActive()
 	return util.ReverseSlice(memories)
 }

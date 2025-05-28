@@ -99,6 +99,20 @@ type ChatRoomUserInfo struct {
 	Content  *UserContent `json:"content"`
 }
 
+func (c *ChatRoomUserInfo) GetNickname() string {
+	if c == nil || c.Nickname == "" {
+		return "匿名"
+	}
+	return c.Nickname
+}
+
+func (c *ChatRoomUserInfo) GetIntro() string {
+	if c == nil || c.Intro == "" {
+		return "这个用户很神秘，不知道他的任何信息"
+	}
+	return c.Intro
+}
+
 type UserContent struct {
 	Id           string `json:"id"`
 	Text         string `json:"text"`

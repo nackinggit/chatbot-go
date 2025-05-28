@@ -30,6 +30,7 @@ type Logger struct {
 	sync.RWMutex
 	Opts        *options `json:"opts"`
 	zapConfig   zap.Config
+	ctxFields   []string
 	initialized bool
 }
 
@@ -47,6 +48,7 @@ func defaultLoggerOpts() *options {
 			MaxBackups:    60,
 			MaxAge:        30,
 			Console:       true,
+			CtxFields:     []string{},
 		},
 	}
 }
@@ -80,10 +82,13 @@ func (l *Logger) mergeOpts(logcfg *config.LoggerConfig) {
 	if logcfg.MaxSize > 0 {
 		opts.Properties.MaxSize = logcfg.MaxSize
 	}
+	if len(logcfg.CtxFields) > 0 {
+		opts.Properties.CtxFields = logcfg.CtxFields
+	}
 	opts.Properties.Console = logcfg.Console
 }
 
-func NewLogger(logcfg *config.LoggerConfig) *zap.SugaredLogger {
+func NewLogger(logcfg *config.LoggerConfig) *Logger {
 	defer func() {
 		if logger != nil {
 			logger.Sync()
@@ -120,13 +125,13 @@ func NewLogger(logcfg *config.LoggerConfig) *zap.SugaredLogger {
 	}
 	rlevel, err := zapcore.ParseLevel(property.Level)
 	if err != nil {
-		logger.Infof("invalid log level %q; using INFO", property.Level)
+		logger.Sugar().Infof("invalid log level %q; using INFO", property.Level)
 		rlevel = zapcore.DebugLevel
 	}
 	l.zapConfig.Level.SetLevel(rlevel)
 	l.init()
 	l.initialized = true
-	return l.Logger.Sugar()
+	return l
 }
 
 func (l *Logger) init() {
@@ -200,10 +205,17 @@ func timeUnixNano(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendInt64(t.UnixNano() / 1e6)
 }
 
-var logger *zap.SugaredLogger = func() *zap.SugaredLogger {
+var zaplogger = func() *zap.Logger {
 	slogger, _ := zap.NewDevelopment(zap.AddCallerSkip(1))
-	return slogger.Sugar()
+	return slogger
 }()
+var logger *Logger = &Logger{
+	Logger: zaplogger,
+}
+
+func (l *Logger) getZapLogger() *zap.SugaredLogger {
+	return l.Logger.Sugar()
+}
 
 // log instance init
 func InitLog(property *config.LoggerConfig) {

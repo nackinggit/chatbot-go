@@ -14,5 +14,6 @@ func inputRecommend(ctx *gin.Context) {
 		JSONE(ctx, err, &req)
 	}
 	req.CreateTime = time.Now().UnixMilli()
-	agents.ChatRoomService.InputRecommend(ctx, &req)
+	resp, err := agents.ChatRoomService.InputRecommend(ctx, &req)
+	JSONR(ctx, resp, err)
 }

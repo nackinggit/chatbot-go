@@ -312,6 +312,21 @@ func (a *assistant) loadImBot(imBotId string, imBotName string, imcontent *imapi
 	}
 	return m
 }
+
+func (a *assistant) handleComment(ctx context.Context, req *model.UserAction) {
+	comment, err := model.GetUserActionContent[model.Comment](req)
+	if err != nil {
+		xlog.Warnf("解析chat异常, err:%v, useraction:%v", err, util.JsonString(req))
+		return
+	}
+	if comment.Type == "post" {
+		// 帖子评论
+		xlog.DebugC(ctx, "处理帖子评论消息: %v", util.JsonString(comment))
+	} else if comment.Type == "comment" {
+		// 评论评论
+		xlog.DebugC(ctx, "处理评论评论消息: %v", util.JsonString(comment))
+	}
+}
 func (a *assistant) handleGroupChat(ctx context.Context, req *model.UserAction)    {}
 func (a *assistant) handleFollow(ctx context.Context, req *model.UserAction)       {}
 func (a *assistant) handleCancelFollow(ctx context.Context, req *model.UserAction) {}
@@ -319,6 +334,5 @@ func (a *assistant) handleLike(ctx context.Context, req *model.UserAction)      
 func (a *assistant) handleCancelLike(ctx context.Context, req *model.UserAction)   {}
 func (a *assistant) handleJoinGroup(ctx context.Context, req *model.UserAction)    {}
 func (a *assistant) handleExistGroup(ctx context.Context, req *model.UserAction)   {}
-func (a *assistant) handleComment(ctx context.Context, req *model.UserAction)      {}
 func (a *assistant) handleReplyComment(ctx context.Context, req *model.UserAction) {}
 func (a *assistant) handleCommentPic(ctx context.Context, req *model.UserAction)   {}

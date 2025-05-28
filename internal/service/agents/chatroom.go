@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"math/rand"
+	"slices"
+	"strings"
 	"time"
 
 	xlog "com.imilair/chatbot/bootstrap/log"
@@ -173,14 +176,33 @@ func (t *chatroom) replyUser(ctx context.Context, chatroomSetting *imapi.ChatRoo
 	}
 }
 
-func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendRequest) {
-	// content := req.GetContent()
-
-	// his, _ = sessionManager.build_session(speak.roomId).history_without_rag(content)
-	// record = "\n".join([f"{m['content']}" for m in his if m["content"]])
-	// input := fmt.Sprintf("【话题介绍】\n%s %s\n", req.Topic.Name, req.Topic.Content.Intro)
-	// input += f"【聊天记录】\n{record}\n"
-
+func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendRequest) ([]any, error) {
+	parseRec := func(resp string) ([]any, error) {
+		ret := []any{}
+		var respArr []map[string]any
+		err := util.TryParseJsonArray(resp, &respArr)
+		if err != nil {
+			return ret, err
+		}
+		for _, a := range respArr {
+			ret = append(ret, slices.Collect(maps.Values(a))...)
+		}
+		return ret, nil
+	}
+	contet := req.GetContent()
+	memories := memory.GetTempSession(ctx, req.RoomId).FetchRelatedMemory(ctx, contet, 3000-len(contet))
+	records := []string{}
+	for _, memory := range memories {
+		records = append(records, memory.ToString())
+	}
+	input := fmt.Sprintf("【话题介绍】\n%s %s", req.Topic.Name, req.Topic.GetIntro())
+	input += fmt.Sprintf("【聊天记录】\n%s", strings.Join(records, "\n"))
+	messages := []*base.MessageInput{base.UserStringMessage(input)}
+	output, err := t.topicRecModel.Chat(ctx, messages)
+	if err != nil {
+		return nil, err
+	}
+	return parseRec(output.Content)
 }
 
 func (t *chatroom) handleRoomMessage(ctx context.Context, req *model.Room) {

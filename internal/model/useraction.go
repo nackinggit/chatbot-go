@@ -83,6 +83,13 @@ type ChatRoomTopic struct {
 	Content TopicContent `json:"content"`
 }
 
+func (c *ChatRoomTopic) GetIntro() string {
+	if c == nil {
+		return ""
+	}
+	return c.Content.Intro
+}
+
 func (c *ChatRoomTopic) GetVoteOpts() string {
 
 	if c.Type != "vote" {

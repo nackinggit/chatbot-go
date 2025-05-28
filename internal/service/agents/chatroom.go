@@ -2,6 +2,7 @@ package agents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -28,6 +29,7 @@ type chatroom struct {
 	queue         *queue.Queue[model.Room]
 	endflag       chan bool
 	processedJoin *ttlmap.TTLMap
+	roomMaps      *ttlmap.TTLMap
 }
 
 func (t *chatroom) Name() string {
@@ -47,6 +49,8 @@ func (t *chatroom) InitAndStart() (err error) {
 	}
 	t.queue = queue.NewQueue[model.Room]("chatroom:message")
 	t.endflag = make(chan bool)
+	t.processedJoin = ttlmap.New(1000, chatroomCfg.WelcomeTTL)
+	t.roomMaps = ttlmap.New(1000, chatroomCfg.RoomTTL)
 	ctx := context.Background()
 	util.AsyncGoWithDefault(ctx, func() {
 		xlog.Infof("`%s` chatroom message handler started", t.Name())
@@ -89,34 +93,84 @@ func (t *chatroom) RoomActionCallback(ctx *gin.Context, req *model.Room) (any, e
 	return nil, nil
 }
 
-func (t *chatroom) replyUser(ctx context.Context, chatroomSetting *imapi.ChatRoomSetting, userInfo *model.ChatRoomUserInfo) {
-	// roomId = speak.roomId
-	// bot, gptmsg, discards = await chat_room.reply_speak(speak)
-	// if bot is None or gptmsg is None:
-	//
-	//	return
-	//
-	// reply: ReplyMessage = ReplyMessage(
-	//
-	//	sender_id=bot.imBotId,
-	//	replyTo=ReplyTo(target_id=int(roomId)),
-	//	content=ReplyContent(content=gptmsg.getContent()),
-	//
-	// )
-	// logger.info(f"发送消息: {reply.model_dump_json()}")
-	// resp = await bot_api.send_chat_message(reply=reply, scene="room")
-	// if resp is not None and resp.status_code == 200:
-	//
-	//	logger.info(f"发送结果: {resp.json()}")
-	//	await chat_room.update_session(roomId, speak, reply)
-	//
-	// else:
-	//
-	//	logger.info(f"发送消息失败: {reply.model_dump_json()}")
-	//
-	// if len(discards) > 50:
-	//
-	//	_summary_topic(speak.roomId, speak.topic)
+func (t *chatroom) replyUser(ctx context.Context, chatroomSetting *imapi.ChatRoomSetting, req *model.Room) {
+	presenter, err := t.randomPresenter(ctx, chatroomSetting)
+	if err != nil {
+		xlog.WarnC(ctx, "chatroom.randomPresenter err: %v", err)
+		return
+	}
+	userInfo := req.UserInfo
+	chatTopic := req.Topic
+	nickname := userInfo.GetNickname()
+	intro := userInfo.GetIntro()
+	ctype := userInfo.Action
+	if userInfo.Content == nil {
+		return
+	}
+	xlog.DebugC(ctx, "[聊天室 %s]用户小纸条: %v", chatroomSetting.Id.String(), util.JsonString(userInfo))
+	var input *dbmodel.LlmChatHistory
+	content := ""
+	if userInfo.Content.Text != "" {
+		content = userInfo.Content.Text
+		input = &dbmodel.LlmChatHistory{
+			ID:      util.NewSnowflakeID().Int64(),
+			Mid:     util.Md5Object(userInfo.Content.Text),
+			ImBotID: presenter.Cfg.BotId,
+			Role:    string(base.USER),
+			Message: fmt.Sprintf("作为一个有经验的主持人，用你丰富多彩的主持经验，针对主题`%s`，回答以下观点：\n"+
+				"```\n%s（%s）发表了观点：%s\n```", chatTopic.Name, nickname, intro, userInfo.Content.Text),
+		}
+	} else if ctype == "vote" {
+		input = &dbmodel.LlmChatHistory{
+			ID:      util.NewSnowflakeID().Int64(),
+			Mid:     util.Md5Object(userInfo.Content.Text),
+			ImBotID: presenter.Cfg.BotId,
+			Role:    string(base.USER),
+			Message: fmt.Sprintf("作为一个有经验的主持人，用你丰富多彩的主持经验，总结以下主题`%s`的阶段性投票结果：\n"+
+				"```\n%s\n---最新投票信息\n%s 为 `%s` 投了一票\n```", chatTopic.Name, chatTopic.GetVoteOpts(), nickname, userInfo.GetVote()),
+		}
+	}
+	session := memory.GetTempSession(ctx, req.RoomId)
+	memories := []*memory.MemoryItems{}
+	if content != "" {
+		memories = session.FetchRelatedMemory(ctx, content, 5000-len([]rune(input.Message)))
+	}
+	messages := cvtMemory(memories, input)
+	output, err := presenter.Chat(ctx, messages)
+	if err != nil {
+		xlog.Warnf("处理小纸条失败: %v", err)
+	} else {
+		err = imapi.ImapiService.SendMessage(&imapi.ReplyMessage{
+			SenderId: input.ImBotID,
+			ReplyTo: &imapi.ReplyTo{
+				TargetId: util.StringToInt64(string(chatroomSetting.Id)),
+			},
+			ReplyContent: &imapi.ReplyContent{
+				Content: output.Content,
+				Type:    imapi.Text,
+			},
+		}, "room")
+		if err != nil {
+			xlog.Warnf("回复小纸条失败: %v", err)
+		} else {
+			if content != "" {
+				input.Message = content
+				session.AddMemory(ctx, &memory.MemoryItems{
+					CreateTime: time.Now().UnixMilli(),
+					Memories: []*dbmodel.LlmChatHistory{input, {
+						ID:       util.NewSnowflakeID().Int64(),
+						Mid:      util.Md5Object(output.Content),
+						ImUserID: chatroomSetting.Id.String(),
+						ImBotID:  presenter.Cfg.BotId,
+						Role:     string(base.Assistant),
+						Message:  output.Content,
+					}},
+					Sid: util.Md5Object(fmt.Sprintf("%v\n%v", content, output.Content)),
+				})
+			}
+		}
+		session.SetSessionActive()
+	}
 }
 
 func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendRequest) {
@@ -145,34 +199,63 @@ func (t *chatroom) handleRoomMessage(ctx context.Context, req *model.Room) {
 		t.welcomeUser(ctx, chatroomSetting, req.UserInfo)
 	} else if req.UserInfo.Action == "speak" {
 		xlog.Infof("用户 %d 发送小纸条到聊天室 %d", req.UserInfo.Nickname, roomId)
-		t.replyUser(ctx, chatroomSetting, req.UserInfo)
+		t.replyUser(ctx, chatroomSetting, req)
 	} else {
 		xlog.Warnf("未知聊天室事件：%v", req.UserInfo.Action)
 	}
 }
 
+func (t *chatroom) getRoomPresenters(ctx context.Context, chatroomSetting *imapi.ChatRoomSetting) ([]*AgentModel, error) {
+	ret := []*AgentModel{}
+	if presenters, ok := t.roomMaps.Get(chatroomSetting.Id.String()); ok {
+		return presenters.([]*AgentModel), nil
+	}
+	imbots := []*imapi.ImUser{chatroomSetting.PresenterA, chatroomSetting.PresenterB}
+	for _, imbot := range imbots {
+		cfg := imbot.ParseAiConfig()
+		mapi, err := llm.GetApi(cfg.ModelApi)
+		if err != nil {
+			xlog.WarnC(ctx, "llm api: %v 未注册, err: ", cfg.ModelApi, err)
+			return nil, err
+		}
+		ret = append(ret, &AgentModel{
+			LLMModel: &base.LLMModel{
+				Api:   mapi,
+				Name:  imbot.Nickname,
+				Model: cfg.ModelCode,
+			},
+			Cfg: &config.BotConfig{
+				BotId:    imbot.UserId.String(),
+				Name:     imbot.Nickname,
+				ModelKey: cfg.ModelCode,
+				Model:    cfg.ModelCode,
+				Api:      cfg.ModelApi,
+			},
+		})
+	}
+
+	return ret, nil
+}
+
 func (t *chatroom) randomPresenter(ctx context.Context, chatroomSetting *imapi.ChatRoomSetting) (*AgentModel, error) {
-	presenter := util.RandSelect([]*imapi.ImUser{chatroomSetting.PresenterA, chatroomSetting.PresenterB})
-	cfg := presenter.ParseAiConfig()
-	mapi, err := llm.GetApi(cfg.ModelApi)
+	presenters, err := t.getRoomPresenters(ctx, chatroomSetting)
 	if err != nil {
-		xlog.Warnf("llm api: %v 未注册, err: ", cfg.ModelApi, err)
 		return nil, err
 	}
-	return &AgentModel{
-		LLMModel: &base.LLMModel{
-			Api:   mapi,
-			Name:  presenter.Nickname,
-			Model: cfg.ModelCode,
-		},
-		Cfg: &config.BotConfig{
-			BotId:    presenter.UserId.String(),
-			Name:     presenter.Nickname,
-			ModelKey: cfg.ModelCode,
-			Model:    cfg.ModelCode,
-			Api:      cfg.ModelApi,
-		},
-	}, nil
+	return util.RandSelect(presenters), nil
+}
+
+func (t *chatroom) nextPresenter(ctx context.Context, prev *AgentModel, chatroomSetting *imapi.ChatRoomSetting) (*AgentModel, error) {
+	presenters, err := t.getRoomPresenters(ctx, chatroomSetting)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range presenters {
+		if p.Cfg.BotId != prev.Cfg.BotId {
+			return p, nil
+		}
+	}
+	return nil, errors.New("no presenter found")
 }
 
 func (t *chatroom) welcomeUser(ctx context.Context, chatroomSetting *imapi.ChatRoomSetting, userInfo *model.ChatRoomUserInfo) {
@@ -230,19 +313,22 @@ func (t *chatroom) welcomeUser(ctx context.Context, chatroomSetting *imapi.ChatR
 				Sid: util.Md5Object(fmt.Sprintf("%v\n%v", fmt.Sprintf("%s 进入了聊天室", nickname), output.Content)),
 			})
 		}
-		session.SetSessionActive()
+		if !session.IsActiveBefore(5 * time.Minute) {
+			session.SetSessionActive()
+			t.activateChat(ctx, chatroomSetting, bot, output.Content)
+		}
 	}
 }
 
-func (t *chatroom) activateChat(ctx context.Context, chatroomSetting *imapi.ChatRoomSetting, triggerMsg string) {
+func (t *chatroom) activateChat(ctx context.Context, chatroomSetting *imapi.ChatRoomSetting, bot *AgentModel, triggerMsg string) {
 	title := chatroomSetting.Topic.Title
 	mhis := []*base.MessageInput{base.UserStringMessage(fmt.Sprintf("作为一个资深主持人，为了避免冷场，请用你丰富的经验让话题`%s`活跃起来\n"+"    %s", title, triggerMsg))}
 	times := rand.Int31n(5)
-	presenter, _ := t.randomPresenter(ctx, chatroomSetting)
+	presenter, _ := t.nextPresenter(ctx, bot, chatroomSetting)
 	for i := range int(times) {
 		output, err := presenter.Chat(ctx, mhis)
 		if err != nil {
-			xlog.Warnf("Error: %v", err)
+			xlog.WarnC(ctx, "Error: %v", err)
 			return
 		}
 		err = imapi.ImapiService.SendMessage(&imapi.ReplyMessage{
@@ -256,7 +342,8 @@ func (t *chatroom) activateChat(ctx context.Context, chatroomSetting *imapi.Chat
 			},
 		}, "room")
 		if err != nil {
-			xlog.Warnf("Error: %v", err)
+			xlog.WarnC(ctx, "Error: %v", err)
+			return
 		}
 		if i == 0 {
 			mhis = []*base.MessageInput{base.UserStringMessage(output.Content)}

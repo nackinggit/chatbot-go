@@ -4,15 +4,15 @@ import "errors"
 
 type ChatRoomConfig struct {
 	TopicRecommend *BotConfig `json:"topicRecommend" yaml:"topicRecommend" mapstructure:"topicRecommend"` // 话题推荐
-	HostModel1     *BotConfig `json:"host1" yaml:"host1" mapstructure:"host1"`                            // 主持人1
-	HostModel2     *BotConfig `json:"host2" yaml:"host2" mapstructure:"host2"`                            // 主持人2
+	WelcomeTTL     int        `json:"welcomeTTL" yaml:"welcomeTTL" mapstructure:"welcomeTTL"`             // 欢迎语缓存时间
+	RoomTTL        int        `json:"roomTTL" yaml:"roomTTL" mapstructure:"roomTTL"`                      // 房间缓存时间
 }
 
 func (t *ChatRoomConfig) Validate() error {
 	if t == nil {
 		return errors.New("config.chatroom is nil")
 	}
-	if t.TopicRecommend == nil || t.HostModel1 == nil || t.HostModel2 == nil {
+	if t.TopicRecommend == nil {
 		return errors.New("config.chatroom is invalid")
 	}
 	return nil

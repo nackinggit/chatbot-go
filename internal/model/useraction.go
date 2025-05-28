@@ -3,6 +3,8 @@ package model
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"com.imilair/chatbot/pkg/util"
 )
@@ -81,6 +83,18 @@ type ChatRoomTopic struct {
 	Content TopicContent `json:"content"`
 }
 
+func (c *ChatRoomTopic) GetVoteOpts() string {
+
+	if c.Type != "vote" {
+		return ""
+	}
+	strs := []string{}
+	for _, opt := range c.Content.VoteOptions {
+		strs = append(strs, fmt.Sprintf("- 选项：%s, 得票数：%d", opt.Title, opt.Count))
+	}
+	return strings.Join(strs, "\n")
+}
+
 type TopicContent struct {
 	Intro       string        `json:"intro"`
 	VoteOptions []*VoteOption `json:"voteOptions"`
@@ -97,6 +111,13 @@ type ChatRoomUserInfo struct {
 	Intro    string       `json:"intro"`
 	Action   string       `json:"action"`
 	Content  *UserContent `json:"content"`
+}
+
+func (c *ChatRoomUserInfo) GetVote() string {
+	if c == nil || c.Content == nil {
+		return ""
+	}
+	return fmt.Sprintf("%d", c.Content.VoteOptionId)
 }
 
 func (c *ChatRoomUserInfo) GetNickname() string {

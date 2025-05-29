@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -142,9 +143,9 @@ func (c *ChatRoomUserInfo) GetIntro() string {
 }
 
 type UserContent struct {
-	Id           string `json:"id"`
-	Text         string `json:"text"`
-	VoteOptionId int    `json:"voteOptionId"`
+	Id           json.Number `json:"id"`
+	Text         string      `json:"text"`
+	VoteOptionId int         `json:"voteOptionId"`
 }
 
 func GetUserActionContent[T any](ua *UserAction) (*T, error) {

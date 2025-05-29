@@ -322,6 +322,7 @@ func (t *chatroom) welcomeUser(ctx context.Context, chatroomSetting *imapi.ChatR
 		if err != nil {
 			xlog.Warnf("发送欢迎语失败: %v", err)
 		} else {
+			input.Message = fmt.Sprintf("%s 进入了聊天室", nickname)
 			session.AddMemory(ctx, &memory.MemoryItems{
 				CreateTime: time.Now().UnixMilli(),
 				Memories: []*dbmodel.LlmChatHistory{input, {
@@ -332,7 +333,7 @@ func (t *chatroom) welcomeUser(ctx context.Context, chatroomSetting *imapi.ChatR
 					Role:     string(base.Assistant),
 					Message:  output.Content,
 				}},
-				Sid: util.Md5Object(fmt.Sprintf("%v\n%v", fmt.Sprintf("%s 进入了聊天室", nickname), output.Content)),
+				Sid: util.Md5Object(fmt.Sprintf("%v\n%v", input.Message, output.Content)),
 			})
 		}
 		if !session.IsActiveBefore(5 * time.Minute) {

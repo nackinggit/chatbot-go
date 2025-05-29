@@ -167,6 +167,7 @@ func (a *assistant) ComicTranslate(ctx *gin.Context, req *model.ImageRequest) (*
 		Message string                        `json:"msg"`
 		Data    *model.ComicTranslateResponse `json:"data"`
 	}
+	xlog.DebugC(ctx, "漫画翻译请求: %s", string(bs))
 	err = xhttp.DoAndBind(request, &resp)
 	if err != nil {
 		return nil, err

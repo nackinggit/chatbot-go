@@ -217,7 +217,7 @@ func (t *chatroom) handleRoomMessage(ctx context.Context, req *model.Room) {
 		return
 	}
 	if req.UserInfo.Action == "join" {
-		xlog.Infof("用户 %d 加入聊天室 %d", req.UserInfo.Nickname, roomId)
+		xlog.Infof("用户 %s 加入聊天室 %s", req.UserInfo.Nickname, roomId)
 		t.welcomeUser(ctx, chatroomSetting, req.UserInfo)
 	} else if req.UserInfo.Action == "speak" {
 		xlog.Infof("用户 %d 发送小纸条到聊天室 %d", req.UserInfo.Nickname, roomId)
@@ -294,7 +294,7 @@ func (t *chatroom) welcomeUser(ctx context.Context, chatroomSetting *imapi.ChatR
 	nickname := userInfo.GetNickname()
 	intro := userInfo.GetIntro()
 	content := fmt.Sprintf("作为一个有经验的主持人，用你丰富多彩的主持经验，欢迎刚来主题`%s`捧场的用户：\n"+
-		"```\n用户名称：%s\n用户简介：%s```", chatroomSetting.Topic, nickname, intro)
+		"```\n用户名称：%s\n用户简介：%s```", chatroomSetting.GetTopicTitle(), nickname, intro)
 	input := &dbmodel.LlmChatHistory{
 		ID:      util.NewSnowflakeID().Int64(),
 		Mid:     util.Md5Object(content),
@@ -343,9 +343,10 @@ func (t *chatroom) welcomeUser(ctx context.Context, chatroomSetting *imapi.ChatR
 }
 
 func (t *chatroom) activateChat(ctx context.Context, chatroomSetting *imapi.ChatRoomSetting, bot *AgentModel, triggerMsg string) {
+	xlog.DebugC(ctx, "开始活跃聊天室: %s", util.JsonString(chatroomSetting))
 	title := chatroomSetting.Topic.Title
 	mhis := []*base.MessageInput{base.UserStringMessage(fmt.Sprintf("作为一个资深主持人，为了避免冷场，请用你丰富的经验让话题`%s`活跃起来\n"+"    %s", title, triggerMsg))}
-	times := rand.Int31n(5)
+	times := 1 + rand.Int31n(5)
 	presenter, _ := t.nextPresenter(ctx, bot, chatroomSetting)
 	for i := range int(times) {
 		output, err := presenter.Chat(ctx, mhis)

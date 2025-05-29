@@ -70,6 +70,7 @@ func (c *Client) GetAndBind(ctx context.Context, url string, headers http.Header
 }
 
 func PostJsonAndBind[T any](request *JsonPostRequest, target *T) error {
+	xlog.Debugf("Post request: %v", util.JsonString(request))
 	r, err := request.toRequest()
 	if err != nil {
 		return err

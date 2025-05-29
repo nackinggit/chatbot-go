@@ -184,7 +184,6 @@ func (session *Session) AddMemory(ctx context.Context, memory *MemoryItems) erro
 	if err != nil {
 		return err
 	}
-	session.SetSessionActive()
 	return nil
 }
 

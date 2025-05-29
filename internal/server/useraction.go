@@ -9,6 +9,7 @@ import (
 	"com.imilair/chatbot/internal/service/agents"
 	"com.imilair/chatbot/pkg/util"
 	"com.imilair/chatbot/pkg/util/ttlmap"
+	"com.imilair/chatbot/pkg/xredis"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,7 +28,15 @@ func userActionCallback(ctx *gin.Context) {
 		return
 	} else {
 		ur.Put(mid, true)
+		if success, _ := xredis.ExecRedisCmd(func(mr *xredis.XRedisClient) (bool, error) {
+			return mr.SetNX(ctx, "useraction:mid_"+mid, mid, 30*time.Second).Result()
+		}); !success {
+			xlog.Infof("message %s handled...", util.JsonString(req))
+			JSONR(ctx, nil, nil)
+			return
+		}
 	}
+
 	if req.ActionType == model.ROOM {
 		chatRoom, err := model.GetUserActionContent[model.Room](&req)
 		if err != nil {

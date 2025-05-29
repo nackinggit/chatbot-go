@@ -19,10 +19,6 @@ type ReplyMessage struct {
 	ReplyContent *ReplyContent `json:"content"`
 }
 
-func (r *ReplyMessage) getContent() string {
-	return r.ReplyContent.Content
-}
-
 type ReplyTo struct {
 	TargetId int64 `json:"target_id"`
 }
@@ -51,7 +47,7 @@ type ImComment struct {
 type ImUser struct {
 	UserId   json.Number `json:"userId"`
 	Nickname string      `json:"nickname"`
-	AiConfig string      `json:"aiConfig"`
+	AiConfig string      `json:"aiConf"`
 }
 
 func (imuser *ImUser) ParseAiConfig() *AiConfig {
@@ -89,6 +85,14 @@ type ChatRoomSetting struct {
 	PresenterA *ImUser     `json:"presenterA"`
 	PresenterB *ImUser     `json:"presenterB"`
 	Topic      *ChatTopic  `json:"topic"`
+}
+
+func (c *ChatRoomSetting) GetTopicTitle() string {
+	if c.Topic != nil {
+		return c.Topic.Title
+	} else {
+		return "未知聊天室"
+	}
 }
 
 type ChatTopic struct {

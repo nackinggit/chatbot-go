@@ -19,7 +19,7 @@ import (
 )
 
 type sessionManager struct {
-	endflag    chan bool
+	ticker     *time.Ticker
 	sessions   *ttlmap.TTLMap
 	cfg        *config.MemoryConfig
 	eventModel *base.LLMModel
@@ -41,35 +41,29 @@ func (t *sessionManager) InitAndStart() (err error) {
 		return err
 	}
 	innerManager.cfg = mcfg
-	innerManager.endflag = make(chan bool)
 	innerManager.eventModel = &base.LLMModel{}
+	innerManager.ticker = time.NewTicker(30 * time.Minute)
 	if _, err := embedding.GetEmbeddingApi(mcfg.LongMemory.EmbApi); err != nil {
 		return err
 	}
 	ctx := context.Background()
 	util.AsyncGoWithDefault(ctx, func() {
 		xlog.Infof("start memory handler...")
-		for {
-			select {
-			case <-innerManager.endflag:
-				return
-			default:
-				keys := innerManager.sessions.Keys()
-				for _, key := range keys {
-					if session, ok := innerManager.sessions.Get(key); ok {
-						s := session.(*Session)
-						items := s.shortMemory.fetchForgotMemories(ctx)
-						if len(items) > 20 {
-							s.shortMemory.doForget(ctx)
-							if s.longMemory != nil {
-								s.longMemory.append(ctx, items)
-							}
-							t.summary(ctx, s, items)
+		for range innerManager.ticker.C {
+			keys := innerManager.sessions.Keys()
+			for _, key := range keys {
+				if session, ok := innerManager.sessions.Get(key); ok {
+					s := session.(*Session)
+					items := s.shortMemory.fetchForgotMemories(ctx)
+					if len(items) > 20 {
+						s.shortMemory.doForget(ctx)
+						if s.longMemory != nil {
+							s.longMemory.append(ctx, items)
 						}
+						t.summary(ctx, s, items)
 					}
 				}
 			}
-			time.Sleep(30 * time.Minute)
 		}
 	})
 	return nil
@@ -131,7 +125,7 @@ func (t *sessionManager) summary(ctx context.Context, session *Session, items []
 }
 
 func (t *sessionManager) Stop() {
-	innerManager.endflag <- true
+	innerManager.ticker.Stop()
 }
 
 func init() {

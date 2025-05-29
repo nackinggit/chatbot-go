@@ -76,6 +76,7 @@ func (t *assistant) InitAndStart() (err error) {
 	if err != nil {
 		return err
 	}
+	t.defaultReasoningBot, err = initModel(cfg.ReasoningChat)
 	t.queue = queue.NewQueue[model.UserAction]("user_action")
 	t.endflag = make(chan bool)
 	util.AsyncGoWithDefault(context.Background(), func() {

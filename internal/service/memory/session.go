@@ -47,8 +47,8 @@ func (t *sessionManager) InitAndStart() (err error) {
 		return err
 	}
 	ctx := context.Background()
+	xlog.Infof("start memory handler...")
 	util.AsyncGoWithDefault(ctx, func() {
-		xlog.Infof("start memory handler...")
 		for range innerManager.ticker.C {
 			keys := innerManager.sessions.Keys()
 			for _, key := range keys {
@@ -66,6 +66,7 @@ func (t *sessionManager) InitAndStart() (err error) {
 			}
 		}
 	})
+	xlog.Infof("start memory handler started.")
 	return nil
 }
 

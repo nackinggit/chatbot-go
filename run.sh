@@ -14,7 +14,7 @@
 ###################################
 #初始化psid变量（全局）
 psid=0
-APP_MAINCLASS=aigc-backend2c
+APP_MAINCLASS=chatbot-go
 PIDFILE="$PWD/app.pid"
 
 checkpid() {
@@ -48,7 +48,7 @@ start() {
         echo "================================"
     else
         echo -n "Starting $APP_MAINCLASS ..."
-        nohup ./$APP_MAINCLASS -common.conf configs/common.yaml -app.conf configs/app.yaml -http.port 8080 > server.log &
+        nohup ./$APP_MAINCLASS -configpath ./configs > server.log &
         echo $! >$PIDFILE
         checkpid
         if [ $psid -ne 0 ]; then

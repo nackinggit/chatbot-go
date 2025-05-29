@@ -98,7 +98,7 @@ func (t *assistant) InitAndStart() (err error) {
 						if fn != nil {
 							fn(ctx, &action)
 						} else {
-							xlog.Warnf("`%s` unknown action type: %d, ignore message: %s", t.Name(), action.ActionType, util.JsonString(action))
+							xlog.Warnf("`%s` unknown action type: %v, ignore message: %s", t.Name(), action.ActionType, util.JsonString(action))
 						}
 					}
 				} else {

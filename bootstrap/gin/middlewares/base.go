@@ -59,12 +59,12 @@ func cacheBody(ctx *gin.Context) []byte {
 func setmid(ctx *gin.Context) {
 	bs := cacheBody(ctx)
 	hash := md5.Sum(bs)
-	ctx.Header("x-mid", hex.EncodeToString(hash[:]))
+	ctx.Set("x-mid", hex.EncodeToString(hash[:]))
 	rid := ctx.GetHeader("X-Request-Id")
 	if rid == "" {
 		rid = util.NewSnowflakeID().String()
-		ctx.Header("X-Request-Id", rid)
 	}
+	ctx.Set("x-request-id", rid)
 }
 
 func CORSWithConfig(cfg *config.CORSConfig) gin.HandlerFunc {
@@ -111,11 +111,11 @@ func LogHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		now := time.Now()
 		setmid(ctx)
-		xlog.Infof("request: %v", ctx.Request.URL.Path)
+		xlog.InfoC(ctx, "request: %v", ctx.Request.URL.Path)
 		blw := &ResponseWriterWrapper{Body: bytes.NewBufferString(""), ResponseWriter: ctx.Writer}
 		ctx.Writer = blw
 		ctx.Next()
-		xlog.Infof("response: %v: %v, cost: %v", ctx.Request.URL.Path, ctx.Writer.Status(), time.Since(now))
+		xlog.InfoC(ctx, "response: %v: %v, cost: %v", ctx.Request.URL.Path, ctx.Writer.Status(), time.Since(now))
 	}
 }
 
@@ -132,5 +132,8 @@ func RateLimitHandler() gin.HandlerFunc {
 }
 
 func GetMid(ctx *gin.Context) string {
-	return ctx.GetHeader("X-Mid")
+	if s, ok := ctx.Value("x-mid").(string); ok {
+		return s
+	}
+	return ""
 }

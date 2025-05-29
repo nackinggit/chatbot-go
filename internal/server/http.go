@@ -17,6 +17,7 @@ func Route(e *gin.Engine) {
 	apiV1 := e.Group("/api")
 	{
 		apiV1.POST("/user_action/callback", userActionCallback)
+		apiV1.POST("/outside/list", outsideList)
 	}
 
 	botv1 := apiV1.Group("/bot")
@@ -40,15 +41,16 @@ func Route(e *gin.Engine) {
 func JSONR(ctx *gin.Context, data any, err error) {
 	if err != nil {
 		JSONE[any](ctx, err, nil)
+	} else {
+		ctx.JSON(200, gin.H{"code": 0, "message": "", "data": data})
 	}
-	ctx.JSON(200, gin.H{"code": 0, "message": "", "data": data})
 }
 
 func JSONE[T any](ctx *gin.Context, err error, req *T) {
 	if berr, ok := err.(bcode.BError); ok {
 		ctx.JSON(200, gin.H{"code": berr.Code(), "message": berr.Message()})
 	} else if ve, ok := err.(validator.ValidationErrors); ok && req != nil {
-		ctx.JSON(400, gin.H{"code": 400, "message": validatorErr(ve, req)})
+		ctx.JSON(400, gin.H{"code": 400, "message": validatorErr(ve, *req)})
 	} else {
 		ctx.JSON(200, gin.H{"code": 500, "message": err.Error()})
 	}

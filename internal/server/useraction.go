@@ -16,7 +16,7 @@ var ur = ttlmap.New(10000, 30)
 
 func userActionCallback(ctx *gin.Context) {
 	var req model.UserAction
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		JSONE(ctx, err, &req)
 		return
 	}

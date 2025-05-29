@@ -194,9 +194,8 @@ func (session *Session) FetchRelatedMemory(ctx context.Context, input string, ma
 		xlog.Infof("session not found")
 		return []*MemoryItems{}
 	}
-	shotMemories := session.shortMemory.fetch(ctx)
-	longMmemories := session.longMemory.fetchRelated(ctx, input)
 	var memories = []*MemoryItems{}
+	shotMemories := session.shortMemory.fetch(ctx)
 	curWords := 0
 	for _, memory := range util.ReverseSlice(shotMemories) {
 		if curWords >= maxWords {
@@ -206,14 +205,16 @@ func (session *Session) FetchRelatedMemory(ctx context.Context, input string, ma
 			curWords += memory.WordCount()
 		}
 	}
-	for _, memory := range util.ReverseSlice(longMmemories) {
-		if curWords >= maxWords {
-			break
-		} else {
-			memories = append(memories, memory)
-			curWords += memory.WordCount()
+	if session.longMemory != nil {
+		longMmemories := session.longMemory.fetchRelated(ctx, input)
+		for _, memory := range util.ReverseSlice(longMmemories) {
+			if curWords >= maxWords {
+				break
+			} else {
+				memories = append(memories, memory)
+				curWords += memory.WordCount()
+			}
 		}
 	}
-	session.SetSessionActive()
 	return util.ReverseSlice(memories)
 }

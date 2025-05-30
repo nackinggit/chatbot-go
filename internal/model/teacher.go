@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"strings"
 )
 
 type ImageRequest struct {
@@ -34,13 +33,13 @@ type Answer struct {
 }
 
 type MangHePredictRequest struct {
-	Time        string   `json:"time"`                                                         // 时间
-	Addr        string   `json:"addr"`                                                         // 地址
-	Direction   string   `json:"direction"`                                                    // 方向
-	Series      string   `json:"series"`                                                       // 系列
-	Roles       []string `json:"roles"`                                                        // 角色
-	GoalRole    string   `json:"goalRole" binding:"required" err:"goalRole is required"`       // 目标角色
-	Description string   `json:"description" binding:"required" err:"description is required"` // 描述
+	Time        string `json:"time"`                                                         // 时间
+	Addr        string `json:"addr"`                                                         // 地址
+	Direction   string `json:"direction"`                                                    // 方向
+	Series      string `json:"series"`                                                       // 系列
+	Roles       string `json:"roles"`                                                        // 角色
+	GoalRole    string `json:"goalRole" binding:"required" err:"goalRole is required"`       // 目标角色
+	Description string `json:"description" binding:"required" err:"description is required"` // 描述
 }
 
 func (mpr *MangHePredictRequest) ToString() string {
@@ -58,7 +57,7 @@ func (mpr *MangHePredictRequest) ToString() string {
 		res += fmt.Sprintf("【盲盒系列】%s\n", mpr.Series)
 	}
 	if len(mpr.Roles) > 0 {
-		res += fmt.Sprintf("【该系列主要角色】%s\n", strings.Join(mpr.Roles, ", "))
+		res += fmt.Sprintf("【该系列主要角色】%s\n", mpr.Roles)
 	}
 	res += fmt.Sprintf("【目标款式】%s\n", mpr.GoalRole)
 	res += fmt.Sprintf("【描述】%s", mpr.Description)

@@ -9,6 +9,7 @@ import (
 	"com.imilair/chatbot/internal/service/agents"
 	"com.imilair/chatbot/pkg/util"
 	"com.imilair/chatbot/pkg/util/ttlmap"
+	xvc "com.imilair/chatbot/pkg/volceengine"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,7 +17,7 @@ var ur = ttlmap.New(10000, 30)
 
 func userActionCallback(ctx *gin.Context) {
 	var req model.UserAction
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		JSONE(ctx, err, &req)
 		return
 	}
@@ -46,4 +47,10 @@ func userActionCallback(ctx *gin.Context) {
 
 func entitySegment(ctx *gin.Context) {
 	var req model.ImageRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		JSONE(ctx, err, &req)
+		return
+	}
+	resp, err := xvc.EntitySegment(req.ImageUrl)
+	JSONR(ctx, resp, err)
 }

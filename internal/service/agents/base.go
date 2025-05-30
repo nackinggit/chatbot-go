@@ -71,7 +71,7 @@ func sseResponse[T any](ctx *gin.Context, sseStream *sseStream[T]) {
 	for stream.Next() {
 		output := stream.Current()
 		t := dataHandler(&output, nil)
-		xlog.Infof("data: %v", util.JsonString(t))
+		xlog.DebugC(ctx, "data: %v", util.JsonString(t))
 		if doWrite(t) {
 			return
 		}

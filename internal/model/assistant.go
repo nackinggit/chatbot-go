@@ -20,3 +20,18 @@ type ComicTranslateResponse struct {
 	ImgBase64 string `json:"imgBase64"`
 	Format    string `json:"format"`
 }
+
+type OutsideListRequest struct {
+	Tags   []string `json:"tags"`
+	UserId int64    `json:"userId" binding:"required" err:"userId不能为空"`
+}
+
+type OutsideListResponse struct {
+	Items []*OutsideItem `json:"items"`
+}
+
+type OutsideItem struct {
+	Tip  string   `json:"tip"`
+	Link string   `json:"link"`
+	Tags []string `json:"tags"`
+}

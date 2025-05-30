@@ -67,6 +67,7 @@ func NewShortMemory(sessionId string, cfg *config.ShortMemoryConfig) *ShortMemor
 
 // 添加记忆
 func (sm *ShortMemory) append(ctx context.Context, memoryItems *MemoryItems) error {
+	xlog.DebugC(ctx, "添加短期记忆: %v", util.JsonString(memoryItems))
 	_, err := xredis.ExecRedisCmd(func(mr *xredis.XRedisClient) (any, error) {
 		return mr.ZAdd(ctx, sm.SessionId, redis.Z{
 			Member: util.JsonString(memoryItems),
@@ -149,6 +150,7 @@ func NewLongMemory(cfg *config.LongMemoryConfig, sessionId string) (*LongMemory,
 }
 
 func (lm *LongMemory) append(ctx context.Context, memoryItems []*MemoryItems) error {
+	xlog.DebugC(ctx, "添加长期记忆: %v", util.JsonString(memoryItems))
 	vecStrings := []string{}
 	for _, item := range memoryItems {
 		vecStrings = append(vecStrings, item.ToString())

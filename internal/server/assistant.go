@@ -1,6 +1,8 @@
 package server
 
 import (
+	"errors"
+
 	"com.imilair/chatbot/internal/model"
 	"com.imilair/chatbot/internal/service/agents"
 	"github.com/gin-gonic/gin"
@@ -8,7 +10,7 @@ import (
 
 func extractName(ctx *gin.Context) {
 	var req model.ExtractNameRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		JSONE(ctx, err, &req)
 		return
 	}
@@ -18,7 +20,7 @@ func extractName(ctx *gin.Context) {
 
 func commentPic(ctx *gin.Context) {
 	var req model.CommentPicRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		JSONE(ctx, err, &req)
 		return
 	}
@@ -27,14 +29,25 @@ func commentPic(ctx *gin.Context) {
 }
 
 func commentPost(ctx *gin.Context) {
+	JSONE[any](ctx, errors.New("not implemented"), nil)
 }
 
 func comicTranslate(ctx *gin.Context) {
 	var req model.ImageRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		JSONE(ctx, err, &req)
 		return
 	}
 	resp, err := agents.AssistantService.ComicTranslate(ctx, &req)
+	JSONR(ctx, resp, err)
+}
+
+func outsideList(ctx *gin.Context) {
+	var req model.OutsideListRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		JSONE(ctx, err, &req)
+		return
+	}
+	resp, err := agents.AssistantService.OutsideList(ctx, &req)
 	JSONR(ctx, resp, err)
 }

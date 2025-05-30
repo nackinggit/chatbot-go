@@ -19,7 +19,7 @@ import (
 )
 
 type sessionManager struct {
-	endflag    chan bool
+	ticker     *time.Ticker
 	sessions   *ttlmap.TTLMap
 	cfg        *config.MemoryConfig
 	eventModel *base.LLMModel
@@ -41,37 +41,32 @@ func (t *sessionManager) InitAndStart() (err error) {
 		return err
 	}
 	innerManager.cfg = mcfg
-	innerManager.endflag = make(chan bool)
 	innerManager.eventModel = &base.LLMModel{}
+	innerManager.ticker = time.NewTicker(30 * time.Minute)
 	if _, err := embedding.GetEmbeddingApi(mcfg.LongMemory.EmbApi); err != nil {
 		return err
 	}
 	ctx := context.Background()
+	xlog.Infof("start memory handler...")
 	util.AsyncGoWithDefault(ctx, func() {
-		xlog.Infof("start memory handler...")
-		for {
-			select {
-			case <-innerManager.endflag:
-				return
-			default:
-				keys := innerManager.sessions.Keys()
-				for _, key := range keys {
-					if session, ok := innerManager.sessions.Get(key); ok {
-						s := session.(*Session)
-						items := s.shortMemory.fetchForgotMemories(ctx)
-						if len(items) > 20 {
-							s.shortMemory.doForget(ctx)
-							if s.longMemory != nil {
-								s.longMemory.append(ctx, items)
-							}
-							t.summary(ctx, s, items)
+		for range innerManager.ticker.C {
+			keys := innerManager.sessions.Keys()
+			for _, key := range keys {
+				if session, ok := innerManager.sessions.Get(key); ok {
+					s := session.(*Session)
+					items := s.shortMemory.fetchForgotMemories(ctx)
+					if len(items) > 20 {
+						s.shortMemory.doForget(ctx)
+						if s.longMemory != nil {
+							s.longMemory.append(ctx, items)
 						}
+						t.summary(ctx, s, items)
 					}
 				}
 			}
-			time.Sleep(30 * time.Minute)
 		}
 	})
+	xlog.Infof("start memory handler started.")
 	return nil
 }
 
@@ -131,7 +126,7 @@ func (t *sessionManager) summary(ctx context.Context, session *Session, items []
 }
 
 func (t *sessionManager) Stop() {
-	innerManager.endflag <- true
+	innerManager.ticker.Stop()
 }
 
 func init() {
@@ -190,7 +185,6 @@ func (session *Session) AddMemory(ctx context.Context, memory *MemoryItems) erro
 	if err != nil {
 		return err
 	}
-	session.SetSessionActive()
 	return nil
 }
 
@@ -200,9 +194,8 @@ func (session *Session) FetchRelatedMemory(ctx context.Context, input string, ma
 		xlog.Infof("session not found")
 		return []*MemoryItems{}
 	}
-	shotMemories := session.shortMemory.fetch(ctx)
-	longMmemories := session.longMemory.fetchRelated(ctx, input)
 	var memories = []*MemoryItems{}
+	shotMemories := session.shortMemory.fetch(ctx)
 	curWords := 0
 	for _, memory := range util.ReverseSlice(shotMemories) {
 		if curWords >= maxWords {
@@ -212,14 +205,16 @@ func (session *Session) FetchRelatedMemory(ctx context.Context, input string, ma
 			curWords += memory.WordCount()
 		}
 	}
-	for _, memory := range util.ReverseSlice(longMmemories) {
-		if curWords >= maxWords {
-			break
-		} else {
-			memories = append(memories, memory)
-			curWords += memory.WordCount()
+	if session.longMemory != nil {
+		longMmemories := session.longMemory.fetchRelated(ctx, input)
+		for _, memory := range util.ReverseSlice(longMmemories) {
+			if curWords >= maxWords {
+				break
+			} else {
+				memories = append(memories, memory)
+				curWords += memory.WordCount()
+			}
 		}
 	}
-	session.SetSessionActive()
 	return util.ReverseSlice(memories)
 }

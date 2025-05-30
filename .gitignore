@@ -20,3 +20,7 @@ aigc-backend2c
 *-local.yaml
 *.xlsx
 *_test.go
+app.pid
+*.log.*
+*.log
+chatbot-go

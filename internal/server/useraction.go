@@ -43,3 +43,7 @@ func userActionCallback(ctx *gin.Context) {
 		JSONR(ctx, resp, err)
 	}
 }
+
+func entitySegment(ctx *gin.Context) {
+	var req model.ImageRequest
+}

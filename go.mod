@@ -15,6 +15,7 @@ require (
 	github.com/redis/go-redis/v9 v9.8.0
 	github.com/rs/xid v1.6.0
 	github.com/spf13/viper v1.20.1
+	github.com/volcengine/volc-sdk-golang v1.0.189
 	github.com/volcengine/volcengine-go-sdk v1.1.7
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.38.0
@@ -115,7 +116,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
-	github.com/volcengine/volc-sdk-golang v1.0.23 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect

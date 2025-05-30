@@ -17,6 +17,7 @@ func Route(e *gin.Engine) {
 	apiV1 := e.Group("/api")
 	{
 		apiV1.POST("/user_action/callback", userActionCallback)
+		apiV1.POST("/cv/entity_segment", entitySegment)
 	}
 
 	botv1 := apiV1.Group("/bot")

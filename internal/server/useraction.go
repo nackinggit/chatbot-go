@@ -23,8 +23,9 @@ func userActionCallback(ctx *gin.Context) {
 		return
 	}
 	mid := middlewares.GetMid(ctx)
+	xlog.InfoC(ctx, "message: %s", mid, util.JsonString(req))
 	if mid != "" && ur.Contains(mid) {
-		xlog.Infof("message %s handled...", util.JsonString(req))
+		xlog.Infof("message handled...")
 		JSONR(ctx, nil, nil)
 		return
 	} else {
@@ -32,7 +33,7 @@ func userActionCallback(ctx *gin.Context) {
 		if success, _ := xredis.ExecRedisCmd(func(mr *xredis.XRedisClient) (bool, error) {
 			return mr.SetNX(ctx, "useraction:mid_"+mid, mid, 30*time.Second).Result()
 		}); !success {
-			xlog.Infof("message %s handled...", util.JsonString(req))
+			xlog.Infof("message handled...")
 			JSONR(ctx, nil, nil)
 			return
 		}

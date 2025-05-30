@@ -20,6 +20,7 @@ import (
 	"com.imilair/chatbot/pkg/embedding"
 	"com.imilair/chatbot/pkg/llm"
 	"com.imilair/chatbot/pkg/util"
+	xvc "com.imilair/chatbot/pkg/volceengine"
 	"com.imilair/chatbot/pkg/xmilvus"
 	"com.imilair/chatbot/pkg/xmysql"
 	"com.imilair/chatbot/pkg/xredis"
@@ -86,6 +87,9 @@ func (a *app) Init(router func(e *gin.Engine), middlewares ...gin.HandlerFunc) e
 		if err != nil {
 			return err
 		}
+	}
+	if Config.VolceEngineConfig != nil {
+		xvc.Init(Config.VolceEngineConfig)
 	}
 	a.httpRouter = router
 	a.middlewares = append(a.middlewares, ginmiddlewars.LogHandler())

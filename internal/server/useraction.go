@@ -60,6 +60,6 @@ func entitySegment(ctx *gin.Context) {
 		JSONE(ctx, err, &req)
 		return
 	}
-	resp, err := xvc.EntitySegment(req.ImageUrl)
+	resp, err := xvc.EntitySegment(ctx, req.ImageUrl)
 	JSONR(ctx, resp, err)
 }

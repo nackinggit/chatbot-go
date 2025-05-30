@@ -1,10 +1,12 @@
 package xvc
 
 import (
+	"context"
 	"fmt"
 
 	"com.imilair/chatbot/bootstrap/config"
 	xlog "com.imilair/chatbot/bootstrap/log"
+	"com.imilair/chatbot/internal/bcode"
 	"com.imilair/chatbot/pkg/util"
 	"github.com/volcengine/volc-sdk-golang/service/visual"
 )
@@ -23,8 +25,11 @@ func Init(cfg *config.VolceEngineConfig) {
 	instance.Client.SetSecretKey(cfg.Sk)
 }
 
-func EntitySegment(url string) (*EntitySegmentResponse, error) {
-	res, c, err := visual.DefaultInstance.EntitySegment(map[string]interface{}{
+func EntitySegment(ctx context.Context, url string) (*EntitySegmentResponse, error) {
+	if instance == nil {
+		return nil, bcode.New(500, "xvc not inited")
+	}
+	res, c, err := instance.EntitySegment(map[string]interface{}{
 		"req_key":       "entity_seg",
 		"image_urls":    []string{url},
 		"return_format": 3,
@@ -34,6 +39,7 @@ func EntitySegment(url string) (*EntitySegmentResponse, error) {
 		return nil, err
 	}
 	if c != 200 || res.Data == nil || len(res.Data.BinaryDataBase64) <= 0 {
+		xlog.InfoC(ctx, "分割失败: %v", util.JsonString(res))
 		return nil, fmt.Errorf("分割失败: %v-%v", res.Code, res.Message)
 	}
 	ib64s := res.Data.BinaryDataBase64

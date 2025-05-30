@@ -220,7 +220,7 @@ func (t *chatroom) handleRoomMessage(ctx context.Context, req *model.Room) {
 		xlog.Infof("用户 %s 加入聊天室 %s", req.UserInfo.Nickname, roomId)
 		t.welcomeUser(ctx, chatroomSetting, req.UserInfo)
 	} else if req.UserInfo.Action == "speak" {
-		xlog.Infof("用户 %d 发送小纸条到聊天室 %d", req.UserInfo.Nickname, roomId)
+		xlog.Infof("用户 %s 发送小纸条到聊天室 %s", req.UserInfo.Nickname, roomId)
 		t.replyUser(ctx, chatroomSetting, req)
 	} else {
 		xlog.Warnf("未知聊天室事件：%v", req.UserInfo.Action)

@@ -79,9 +79,11 @@ func (o *OpenaiCompatiableApi) Chat(ctx context.Context, model string, messages 
 	stream := o.StreamChat(ctx, model, messages)
 	for stream.Next() {
 		oc := stream.Current()
-		output.Content += oc.Content
-		output.ReasoningContent += oc.ReasoningContent
-		output.Role = oc.Role
+		if oc.IsLastChunk {
+			output.Content = oc.Content
+			output.ReasoningContent = oc.ReasoningContent
+			output.Role = oc.Role
+		}
 	}
 	if stream.Err() != nil {
 		err = stream.Err()

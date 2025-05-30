@@ -53,7 +53,9 @@ type LLMModel struct {
 
 func (m *LLMModel) Chat(ctx context.Context, messages []*MessageInput) (Output, error) {
 	xlog.DebugC(ctx, "[%s] chat: %v", m.Model, util.BeautifulJson(messages))
-	return m.Api.Chat(ctx, m.Model, messages)
+	o, e := m.Api.Chat(ctx, m.Model, messages)
+	xlog.DebugC(ctx, "[%s] chat end: %s, err: %v", m.Model, util.JsonString(o), e)
+	return o, e
 }
 
 func (m *LLMModel) StreamChat(ctx context.Context, messages []*MessageInput) *ssestream.Stream[OutputChunk] {

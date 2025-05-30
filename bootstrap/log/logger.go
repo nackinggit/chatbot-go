@@ -48,7 +48,7 @@ func defaultLoggerOpts() *options {
 			MaxBackups:    60,
 			MaxAge:        30,
 			Console:       true,
-			CtxFields:     []string{},
+			CtxFields:     []string{"x-request-id", "x-mid"},
 		},
 	}
 }
@@ -128,6 +128,10 @@ func NewLogger(logcfg *config.LoggerConfig) *Logger {
 		logger.Sugar().Infof("invalid log level %q; using INFO", property.Level)
 		rlevel = zapcore.DebugLevel
 	}
+	if len(property.CtxFields) > 0 {
+		l.ctxFields = append(l.ctxFields, property.CtxFields...)
+	}
+
 	l.zapConfig.Level.SetLevel(rlevel)
 	l.init()
 	l.initialized = true
@@ -211,10 +215,6 @@ var zaplogger = func() *zap.Logger {
 }()
 var logger *Logger = &Logger{
 	Logger: zaplogger,
-}
-
-func (l *Logger) getZapLogger() *zap.SugaredLogger {
-	return l.Logger.Sugar()
 }
 
 // log instance init

@@ -132,6 +132,8 @@ func (t *chatroom) replyUser(ctx context.Context, chatroomSetting *imapi.ChatRoo
 			Message: fmt.Sprintf("作为一个有经验的主持人，用你丰富多彩的主持经验，总结以下主题`%s`的阶段性投票结果：\n"+
 				"```\n%s\n---最新投票信息\n%s 为 `%s` 投了一票\n```", chatTopic.Name, chatTopic.GetVoteOpts(), nickname, userInfo.GetVote()),
 		}
+	} else {
+		xlog.WarnC(ctx, "未定义的聊天类型 %s", ctype)
 	}
 	session := memory.GetTempSession(ctx, req.RoomId)
 	memories := []*memory.MemoryItems{}
@@ -176,7 +178,7 @@ func (t *chatroom) replyUser(ctx context.Context, chatroomSetting *imapi.ChatRoo
 	}
 }
 
-func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendRequest) ([]any, error) {
+func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendRequest) (*model.InputRecommendResponse, error) {
 	parseRec := func(resp string) ([]any, error) {
 		ret := []any{}
 		var respArr []map[string]any
@@ -202,7 +204,13 @@ func (t *chatroom) InputRecommend(ctx *gin.Context, req *model.InputRecommendReq
 	if err != nil {
 		return nil, err
 	}
-	return parseRec(output.Content)
+	segs, err := parseRec(output.Content)
+	if err != nil {
+		return nil, err
+	}
+	return &model.InputRecommendResponse{
+		Segments: segs,
+	}, nil
 }
 
 func (t *chatroom) handleRoomMessage(ctx context.Context, req *model.Room) {

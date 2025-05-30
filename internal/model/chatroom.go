@@ -13,3 +13,7 @@ func (r *InputRecommendRequest) GetContent() string {
 	}
 	return r.UserInfo.Content.Text
 }
+
+type InputRecommendResponse struct {
+	Segments []any `json:"segments"`
+}

@@ -178,14 +178,14 @@ func (a *assistant) ComicTranslate(ctx *gin.Context, req *model.ImageRequest) (*
 	return resp.Data, nil
 }
 
-func (a *assistant) OutsideList(ctx *gin.Context, req *model.OutsideListRequest) (*model.OutsideListResponse, error) {
+func (a *assistant) OutsideList(ctx *gin.Context, req *model.OutsideListRequest) ([]*model.OutsideItem, error) {
 	data := `[{"tip":"《莉可丽丝》短篇动画即将推出，颠覆性暗黑童话风格引发期待。【来源：二次元现场】","link":"","tags":["新番","动漫"]},{"tip":"《烈焰之刃》正式公开，黑暗幻想风动作冒险游戏新作将于 5 月 22 日发售。【来源：二次元现场】","tags":["新番","动漫"],"link":""},{"tip":"《指环王：夏尔传说》再次延期，计划于 7 月 29 日发售。【来源：二次元现场】","tags":["新番","动漫"],"link":""},{"tip":"《境・界 刀鸣》始解测试招募开启，改编自《BLEACH》的游戏备受关注。【来源：二次元现场】","tags":["新番","动漫"],"link":""},{"tip":"2025 年春季动画专题上线，萌娘百科推荐多部新番。【来源：萌娘百科】","tags":["新番","动漫"],"link":""},{"tip":"《咩咩启示录》全球销量突破 450 万份，官方将推出重金属音乐专辑。【来源：二次元现场】","tags":["新番","动漫"],"link":""},{"tip":"《阿凡达：潘多拉边境》破空者 DLC 公布，将于 7 月 16 日上线。【来源：二次元现场】","tags":["新番","动漫"],"link":""},{"tip":"《最终幻想 14》“黄金的遗产” 新消息公布，国际服抢先体验 6 月 28 日开启。【来源：二次元现场】","tags":["新番","动漫"],"link":""},{"tip":"横版冒险游戏《Symphonia》将于 12 月 5 日推出。【来源：二次元现场】","tags":["新番","动漫"],"link":""},{"tip":"《卧龙：苍天陨落》全球玩家总数突破 500 万。【来源：二次元现场】","tags":["新番","动漫"],"link":""}]`
 	items := []*model.OutsideItem{}
 	util.Unmarshal([]byte(data), &items)
-	resp := &model.OutsideListResponse{
-		Items: items,
-	}
-	return resp, nil
+	// resp := &model.OutsideListResponse{
+	// 	Items: items,
+	// }
+	return items, nil
 }
 
 func (a *assistant) UserActionCallback(ctx *gin.Context, req *model.UserAction) (any, error) {

@@ -134,6 +134,7 @@ func (t *chatroom) replyUser(ctx context.Context, chatroomSetting *imapi.ChatRoo
 		}
 	} else {
 		xlog.WarnC(ctx, "未定义的聊天类型 %s", ctype)
+		return
 	}
 	session := memory.GetTempSession(ctx, req.RoomId)
 	memories := []*memory.MemoryItems{}
